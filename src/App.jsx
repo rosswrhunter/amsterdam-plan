@@ -263,7 +263,7 @@ Respond ONLY with valid JSON, no markdown:
   return JSON.parse(text.replace(/```json|```/g, "").trim());
 }
 
-function StaticMealCard({ meal, color }) {
+function StaticMealCard({ meal, color, onSwap, swapping }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${open ? color : "#1e293b"}`, borderRadius: "6px", marginBottom: "4px", overflow: "hidden" }}>
@@ -271,6 +271,11 @@ function StaticMealCard({ meal, color }) {
         <span style={{ fontSize: "9px", color, letterSpacing: "1px" }}>{meal.meal.toUpperCase()}</span>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span style={{ fontSize: "9px", color: "#475569" }}>P:{meal.p} C:{meal.c} F:{meal.f}</span>
+          <button onClick={(e) => { e.stopPropagation(); onSwap && onSwap(); }} disabled={swapping} style={{
+            background: "transparent", border: `1px solid ${color}40`, borderRadius: "4px",
+            color: swapping ? "#334155" : color, fontSize: "10px", cursor: swapping ? "default" : "pointer",
+            padding: "1px 6px", fontFamily: "'Courier New', monospace", lineHeight: 1.4,
+          }}>{swapping ? "…" : "↻"}</button>
           <span style={{ fontSize: "10px", color: "#334155" }}>{open ? "▲" : "▼"}</span>
         </div>
       </div>
@@ -291,7 +296,7 @@ function StaticMealCard({ meal, color }) {
   );
 }
 
-function RecipeCard({ recipe, color, mealLabel }) {
+function RecipeCard({ recipe, color, mealLabel, onSwap, swapping }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${open ? color : "#1e293b"}`, borderRadius: "6px", marginBottom: "4px", overflow: "hidden" }}>
@@ -306,7 +311,14 @@ function RecipeCard({ recipe, color, mealLabel }) {
             <span style={{ fontSize: "9px", color: "#facc15" }}>C:{recipe.macros?.carbs}g</span>
           </div>
         </div>
-        <span style={{ fontSize: "10px", color: "#334155" }}>{open ? "▲" : "▼"}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+          {onSwap && <button onClick={(e) => { e.stopPropagation(); onSwap(); }} disabled={swapping} style={{
+            background: "transparent", border: `1px solid ${color}40`, borderRadius: "4px",
+            color: swapping ? "#334155" : color, fontSize: "10px", cursor: swapping ? "default" : "pointer",
+            padding: "1px 6px", fontFamily: "'Courier New', monospace", lineHeight: 1.4,
+          }}>{swapping ? "…" : "↻"}</button>}
+          <span style={{ fontSize: "10px", color: "#334155" }}>{open ? "▲" : "▼"}</span>
+        </div>
       </div>
       {open && (
         <div style={{ padding: "0 11px 11px", borderTop: "1px solid #1e293b" }}>
@@ -325,7 +337,7 @@ function RecipeCard({ recipe, color, mealLabel }) {
   );
 }
 
-function MacroPanel({ macroDay, fueling, km, recipes, loadingRecipes, recipeError, onGenerateRecipes }) {
+function MacroPanel({ macroDay, fueling, km, recipes, loadingRecipes, recipeError, onGenerateRecipes, onSwapMeal, swappingMeal }) {
   const m = macroData[macroDay] || macroData["hard"];
   const dyn = calcDayMacros(macroDay, km);
   const color = m.color;
@@ -373,12 +385,16 @@ function MacroPanel({ macroDay, fueling, km, recipes, loadingRecipes, recipeErro
       {/* Meals — static until recipes generated, then replaced inline */}
       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
         {(recipes ? recipes.meals : m.meals).map((meal, i) => {
-          const isRecipe = !!recipes;
-          const mealName = isRecipe ? meal.meal : meal.meal;
-          return isRecipe ? (
-            <RecipeCard key={i} recipe={meal} color={color} mealLabel={meal.meal} />
+          const mealName = meal.meal;
+          const isSwapping = swappingMeal === mealName;
+          return recipes ? (
+            <RecipeCard key={i} recipe={meal} color={color} mealLabel={mealName}
+              onSwap={() => onSwapMeal && onSwapMeal(mealName)}
+              swapping={isSwapping} />
           ) : (
-            <StaticMealCard key={i} meal={meal} color={color} />
+            <StaticMealCard key={i} meal={meal} color={color}
+              onSwap={() => onSwapMeal && onSwapMeal(mealName)}
+              swapping={isSwapping} />
           );
         })}
       </div>
@@ -557,6 +573,7 @@ export default function DayByDayPlan() {
   const [dayRecipes, setDayRecipes] = useState({});
   const [dayRecipeLoading, setDayRecipeLoading] = useState({});
   const [dayRecipeError, setDayRecipeError] = useState({});
+  const [daySwappingMeal, setDaySwappingMeal] = useState({}); // { dayKey: mealName }
   const activeRef = useRef(null);
 
   // Find the active day: today if within plan, else first day, else race day
@@ -698,6 +715,35 @@ export default function DayByDayPlan() {
                             setDayRecipeError(p => ({ ...p, [dayKey]: err.message || "Failed to generate. Try again." }));
                           }
                           setDayRecipeLoading(p => ({ ...p, [dayKey]: false }));
+                        }}
+                        swappingMeal={daySwappingMeal[dayKey] || null}
+                        onSwapMeal={async (mealName) => {
+                          setDaySwappingMeal(p => ({ ...p, [dayKey]: mealName }));
+                          try {
+                            const apiKey = localStorage.getItem("oai_key");
+                            if (!apiKey) throw new Error("No OpenAI key");
+                            const macroInfo = macroData[day.macroDay] || macroData["hard"];
+                            const prompt = `You are a sports nutritionist. Generate 1 recipe for "${mealName}" for Ross Hunter (marathon runner, 90kg). Day type: ${macroInfo.label}. Daily targets: ${macroInfo.kcal} kcal, P:${macroInfo.protein}g C:${macroInfo.carbs}g F:${macroInfo.fat}g. No cottage cheese, no feta. Quick, practical, tasty. Exact quantities. Respond ONLY as valid JSON: {"meal":"${mealName}","name":"...","time":"...","macros":{"kcal":0,"protein":0,"carbs":0,"fat":0},"ingredients":["..."],"method":["..."]}`;
+                            const res = await fetch("https://api.openai.com/v1/chat/completions", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+                              body: JSON.stringify({ model: "gpt-4o", max_tokens: 600, messages: [{ role: "user", content: prompt }] }),
+                            });
+                            const data = await res.json();
+                            const text = data.choices?.[0]?.message?.content || "";
+                            const newMeal = JSON.parse(text.replace(/```json|```/g, "").trim());
+                            // If we have recipes already, swap that meal; otherwise create a recipes object from static meals + swap
+                            setDayRecipes(p => {
+                              const existing = p[dayKey];
+                              const baseMeals = existing ? existing.meals : (macroData[day.macroDay] || macroData["hard"]).meals.map(m => ({
+                                meal: m.meal, name: m.food, time: "—",
+                                macros: { kcal: (m.p*4 + m.c*4 + m.f*9), protein: m.p, carbs: m.c, fat: m.f },
+                                ingredients: [m.food], method: ["Prepare as described."]
+                              }));
+                              return { ...p, [dayKey]: { meals: baseMeals.map(m => m.meal === mealName ? newMeal : m) }};
+                            });
+                          } catch(err) { /* silent */ }
+                          setDaySwappingMeal(p => ({ ...p, [dayKey]: null }));
                         }}
                       />}
                     </div>
