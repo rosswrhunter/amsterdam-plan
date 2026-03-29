@@ -360,7 +360,7 @@ function StaticMealCard({ meal, color, onSwap, swapping, kept, onToggleKeep }) {
           <span style={{ fontSize: "9px", color: kept ? color : "#94a3b8", letterSpacing: "1px" }}>{meal.meal.toUpperCase()}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "9px", color: "#475569" }}>P:{meal.p} C:{meal.c} F:{meal.f}</span>
+          <span style={{ fontSize: "9px", color: "#475569" }}>{Math.round(meal.p*4 + meal.c*4 + meal.f*9)} kcal · P:{meal.p} C:{meal.c} F:{meal.f}</span>
           {!kept && (
             swapping
               ? <span style={{ fontSize: "10px", color: "#475569" }}>…</span>
