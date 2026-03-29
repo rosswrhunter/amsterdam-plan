@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const DISLIKED = ["cottage cheese", "feta"];
+const DISLIKED = ["cottage cheese", "feta", "tuna"];
 
 const macroData = {
   hard:    { label: "Hard Training Day",           kcal: 2800, protein: 155, carbs: 355, fat: 80,  color: "#f97316" },

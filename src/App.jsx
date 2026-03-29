@@ -39,7 +39,7 @@ const macroData = {
     note: "Burns ~2,700 kcal. Lower carbs, high protein, lots of veg.",
     meals: [
       { meal: "Breakfast", food: "3 eggs + smoked salmon + avocado ½ + greens", p: 35, c: 5, f: 22 },
-      { meal: "Lunch", food: "Large salad + tuna 180g + chickpeas 120g + olive oil", p: 46, c: 45, f: 18 },
+      { meal: "Lunch", food: "Large salad + grilled chicken 150g + chickpeas 120g + olive oil", p: 46, c: 45, f: 18 },
       { meal: "Snack", food: "Protein shake + handful walnuts", p: 30, c: 8, f: 18 },
       { meal: "Dinner", food: "Chicken thighs 220g + roasted veg + lentils 120g + rice 100g", p: 50, c: 55, f: 15 },
       { meal: "Evening", food: "Greek yogurt 200g", p: 24, c: 8, f: 4 },
@@ -255,7 +255,7 @@ function safeParseJSON(text) {
   throw new Error("Could not parse AI response as JSON");
 }
 
-const DISLIKED = ["cottage cheese", "feta"];
+const DISLIKED = ["cottage cheese", "feta", "tuna"];
 
 async function generateDayRecipes(macroDay) {
   const m = macroData[macroDay] || macroData["hard"];
