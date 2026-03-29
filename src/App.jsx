@@ -359,11 +359,12 @@ function MacroPanel({ macroDay, fueling, km }) {
       {/* Recipe Generator */}
       <div style={{ marginTop: "10px" }}>
         <button
-          onClick={async () => {
+          onClick={async (e) => {
+            e.stopPropagation();
             if (recipes) { setRecipes(null); return; }
             setLoadingRecipes(true);
             try { const r = await generateDayRecipes(macroDay); setRecipes(r); }
-            catch { /* silent */ }
+            catch (err) { /* silent */ }
             setLoadingRecipes(false);
           }}
           disabled={loadingRecipes}
