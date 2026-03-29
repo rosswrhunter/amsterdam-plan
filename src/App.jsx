@@ -444,7 +444,172 @@ function RecipeCard({ recipe, color, mealLabel, onSwap, swapping, kept, onToggle
   );
 }
 
-function MacroPanel({ macroDay, fueling, km, phase, recipes, loadingRecipes, recipeError, onGenerateRecipes, onSwapMeal, swappingMeal }) {
+
+function PhotoLogger({ photoLog, onSave, targets, color }) {
+  const [analysing, setAnalysing] = useState(null); // meal name being analysed
+  const [error, setError] = useState(null);
+  const fileRefs = {};
+
+  // Sum all logged entries
+  const totalActual = photoLog.reduce((s, e) => ({
+    kcal: s.kcal + (e.kcal || 0),
+    protein: s.protein + (e.protein || 0),
+    carbs: s.carbs + (e.carbs || 0),
+    fat: s.fat + (e.fat || 0),
+  }), { kcal: 0, protein: 0, carbs: 0, fat: 0 });
+
+  async function analysePhoto(file, mealName) {
+    const apiKey = localStorage.getItem("oai_key");
+    if (!apiKey) { setError("No OpenAI key — add it in Coach tab."); return; }
+
+    setAnalysing(mealName);
+    setError(null);
+
+    const b64 = await new Promise(res => {
+      const reader = new FileReader();
+      reader.onload = ev => res(ev.target.result.split(",")[1]);
+      reader.readAsDataURL(file);
+    });
+
+    const prompt = `Analyse this meal photo and estimate the macros for a marathon runner (90kg male).
+
+Look carefully at portion sizes, ingredients visible, and cooking method.
+Be realistic about quantities — typical meal portions.
+Meal slot: ${mealName}
+
+Return ONLY valid JSON, no markdown:
+{"description":"brief description of what you see","kcal":0,"protein":0,"carbs":0,"fat":0,"confidence":"high/medium/low","notes":"any caveats"}`;
+
+    try {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer \${apiKey}` },
+        body: JSON.stringify({
+          model: "gpt-4o", max_tokens: 400,
+          messages: [{
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              { type: "image_url", image_url: { url: `data:image/jpeg;base64,\${b64}`, detail: "high" } }
+            ]
+          }]
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+      const text = data.choices?.[0]?.message?.content || "";
+      const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
+      const newEntry = {
+        meal: mealName,
+        preview: `data:image/jpeg;base64,\${b64}`,
+        ...parsed,
+        timestamp: Date.now(),
+      };
+      onSave([...photoLog.filter(e => e.meal !== mealName), newEntry]);
+    } catch (e) {
+      setError(e.message || "Analysis failed.");
+    }
+    setAnalysing(null);
+  }
+
+  function removeEntry(mealName) {
+    onSave(photoLog.filter(e => e.meal !== mealName));
+  }
+
+  const confColor = c => c === "high" ? "#4ade80" : c === "medium" ? "#facc15" : "#f97316";
+
+  return (
+    <div style={{ marginTop: "14px", borderTop: `1px solid \${color}20`, paddingTop: "12px" }}>
+      <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "2px", marginBottom: "10px" }}>📸 ACTUAL vs TARGET</div>
+
+      {/* Progress bars */}
+      {[
+        { label: "KCAL",    actual: totalActual.kcal,    target: targets.kcal,    unit: "",  col: color },
+        { label: "PROTEIN", actual: totalActual.protein, target: targets.protein, unit: "g", col: "#60a5fa" },
+        { label: "CARBS",   actual: totalActual.carbs,   target: targets.carbs,   unit: "g", col: "#facc15" },
+        { label: "FAT",     actual: totalActual.fat,     target: targets.fat,     unit: "g", col: "#f97316" },
+      ].map(bar => {
+        const pct = target => Math.min(100, Math.round((bar.actual / Math.max(1, target)) * 100));
+        const over = bar.actual > bar.target * 1.1;
+        const close = bar.actual >= bar.target * 0.85;
+        const statusCol = photoLog.length === 0 ? "#1e293b" : over ? "#f97316" : close ? "#4ade80" : "#facc15";
+        return (
+          <div key={bar.label} style={{ marginBottom: "8px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+              <span style={{ fontSize: "9px", color: "#475569", letterSpacing: "1px" }}>{bar.label}</span>
+              <span style={{ fontSize: "10px", color: statusCol, fontWeight: "bold" }}>
+                {bar.actual}{bar.unit} <span style={{ color: "#334155" }}>/ {bar.target}{bar.unit}</span>
+              </span>
+            </div>
+            <div style={{ background: "#1e293b", borderRadius: "3px", height: "5px", position: "relative" }}>
+              <div style={{ background: statusCol, borderRadius: "3px", height: "5px", width: `\${pct(bar.target)}%`, transition: "width 0.4s" }} />
+              {/* Target marker */}
+              <div style={{ position: "absolute", top: "-2px", left: "100%", transform: "translateX(-1px)", width: "1px", height: "9px", background: "#475569" }} />
+            </div>
+          </div>
+        );
+      })}
+
+      {error && <div style={{ fontSize: "10px", color: "#ef4444", margin: "6px 0" }}>⚠ {error}</div>}
+
+      {/* Logged meals */}
+      {photoLog.length > 0 && (
+        <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "6px" }}>
+          {photoLog.map((entry, i) => (
+            <div key={i} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid #1e293b", borderRadius: "8px", padding: "8px 10px" }}>
+              <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                {entry.preview && <img src={entry.preview} alt="" style={{ width: "52px", height: "52px", borderRadius: "5px", objectFit: "cover", flexShrink: 0 }} />}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "9px", color, letterSpacing: "1px" }}>{entry.meal.toUpperCase()}</span>
+                    <button onClick={() => removeEntry(entry.meal)} style={{ background: "transparent", border: "none", color: "#334155", cursor: "pointer", fontSize: "12px", padding: "0" }}>✕</button>
+                  </div>
+                  <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "2px", lineHeight: 1.4 }}>{entry.description}</div>
+                  <div style={{ display: "flex", gap: "8px", marginTop: "5px", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: "9px", color: "#4ade80" }}>{entry.kcal} kcal</span>
+                    <span style={{ fontSize: "9px", color: "#60a5fa" }}>P:{entry.protein}g</span>
+                    <span style={{ fontSize: "9px", color: "#facc15" }}>C:{entry.carbs}g</span>
+                    <span style={{ fontSize: "9px", color: "#f97316" }}>F:{entry.fat}g</span>
+                    <span style={{ fontSize: "9px", color: confColor(entry.confidence) }}>~{entry.confidence}</span>
+                  </div>
+                  {entry.notes && <div style={{ fontSize: "9px", color: "#334155", marginTop: "3px" }}>{entry.notes}</div>}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Log a meal photo */}
+      <div style={{ marginTop: "10px" }}>
+        <div style={{ fontSize: "9px", color: "#475569", marginBottom: "6px" }}>Log a meal photo:</div>
+        <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
+          {["Breakfast","Lunch","Dinner","Snack","Pre-run","Evening"].map(mealName => {
+            const logged = photoLog.find(e => e.meal === mealName);
+            const isAnalysing = analysing === mealName;
+            return (
+              <label key={mealName} style={{
+                padding: "5px 10px", border: `1px solid \${logged ? color + "60" : "#1e293b"}`,
+                borderRadius: "6px", background: logged ? `\${color}12` : "transparent",
+                color: isAnalysing ? "#475569" : logged ? color : "#475569",
+                fontSize: "9px", cursor: isAnalysing ? "default" : "pointer",
+                fontFamily: "'Courier New', monospace", display: "flex", alignItems: "center", gap: "4px",
+              }}>
+                <input type="file" accept="image/*" capture="environment" style={{ display: "none" }}
+                  onChange={e => { if (e.target.files[0]) analysePhoto(e.target.files[0], mealName); e.target.value = ""; }}
+                  disabled={isAnalysing}
+                />
+                {isAnalysing ? "…" : logged ? "✓ " : "📷 "}{mealName}
+              </label>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MacroPanel({ macroDay, fueling, km, phase, recipes, loadingRecipes, recipeError, onGenerateRecipes, onSwapMeal, swappingMeal, photoLog, onSavePhotoLog }) {
   const m = macroData[macroDay] || macroData["hard"];
   const dyn = calcDayMacros(macroDay, km, phase);
   const color = m.color;
@@ -560,6 +725,14 @@ function MacroPanel({ macroDay, fueling, km, phase, recipes, loadingRecipes, rec
       </div>
 
       {fueling && <FuelingPanel fueling={fueling} />}
+
+      {/* Photo Logger */}
+      <PhotoLogger
+        photoLog={photoLog || []}
+        onSave={onSavePhotoLog || (() => {})}
+        targets={{ kcal: dyn.kcal, protein: dyn.protein, carbs: dyn.carbs, fat: dyn.fat }}
+        color={color}
+      />
 
       {/* Generate / hide button */}
       <div style={{ marginTop: "10px" }}>
@@ -737,6 +910,14 @@ export default function DayByDayPlan() {
   const [dayRecipeLoading, setDayRecipeLoading] = useState({});
   const [dayRecipeError, setDayRecipeError] = useState({});
   const [daySwappingMeal, setDaySwappingMeal] = useState({}); // { dayKey: mealName }
+  const [dayPhotoLog, setDayPhotoLog] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("ams_photolog") || "{}"); } catch { return {}; }
+  });
+  function savePhotoLog(key, entries) {
+    const updated = { ...dayPhotoLog, [key]: entries };
+    setDayPhotoLog(updated);
+    localStorage.setItem("ams_photolog", JSON.stringify(updated));
+  }
   const activeRef = useRef(null);
 
   // Find the active day: today if within plan, else first day, else race day
@@ -865,6 +1046,8 @@ export default function DayByDayPlan() {
                         recipes={dayRecipes[dayKey] || null}
                         loadingRecipes={!!dayRecipeLoading[dayKey]}
                         recipeError={dayRecipeError[dayKey] || null}
+                        photoLog={dayPhotoLog[dayKey] || []}
+                        onSavePhotoLog={(entries) => savePhotoLog(dayKey, entries)}
                         onGenerateRecipes={async () => {
                           if (dayRecipes[dayKey]) {
                             setDayRecipes(p => ({ ...p, [dayKey]: null }));
