@@ -374,7 +374,6 @@ function StaticMealCard({ meal, color, onSwap, swapping, kept, onToggleKeep }) {
         </div>
       </div>
       {showSwap && <SwapPanel color={color} onSwap={(p) => { onSwap && onSwap(p); setShowSwap(false); }} onClose={() => setShowSwap(false)} />}
-      {showSwap && <SwapPanel color={color} onSwap={(p) => { onSwap && onSwap(p); setShowSwap(false); }} onClose={() => setShowSwap(false)} />}
       {open && (
         <div style={{ padding: "0 10px 10px", borderTop: "1px solid #1e293b" }}>
           <div style={{ fontSize: "11px", color: "#94a3b8", lineHeight: 1.6, marginTop: "8px" }}>{meal.food}</div>
@@ -896,7 +895,7 @@ export default function DayByDayPlan() {
                             const res = await fetch("https://api.openai.com/v1/chat/completions", {
                               method: "POST",
                               headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-                              body: JSON.stringify({ model: "gpt-4o", max_tokens: 600, messages: [{ role: "user", content: prompt }] }),
+                              body: JSON.stringify({ model: "gpt-4o", max_tokens: 1000, messages: [{ role: "user", content: prompt }] }),
                             });
                             const data = await res.json();
                             const text = data.choices?.[0]?.message?.content || "";
