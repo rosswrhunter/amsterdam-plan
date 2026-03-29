@@ -280,6 +280,57 @@ Respond ONLY with valid JSON, no markdown:
   return JSON.parse(text.replace(/```json|```/g, "").trim());
 }
 
+function SwapPrompt({ color, swapping, onSwap }) {
+  const [showInput, setShowInput] = useState(false);
+  const [prompt, setPrompt] = useState("");
+  const suggestions = ["Asian", "Spanish", "Mexican", "High protein", "Quick 10 min", "Italian"];
+  if (swapping) return <span style={{ fontSize: "10px", color: "#475569", padding: "2px 6px" }}>…</span>;
+  if (!showInput) return (
+    <button onClick={(e) => { e.stopPropagation(); setShowInput(true); }} style={{
+      background: "transparent", border: `1px solid ${color}40`, borderRadius: "4px",
+      color: color, fontSize: "10px", cursor: "pointer",
+      padding: "1px 6px", fontFamily: "'Courier New', monospace", lineHeight: 1.4,
+    }}>↻</button>
+  );
+  return (
+    <div onClick={e => e.stopPropagation()} style={{ marginTop: "8px", borderTop: "1px solid #1e293b", paddingTop: "8px" }}>
+      <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "1px", marginBottom: "6px" }}>What do you want instead?</div>
+      <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "7px" }}>
+        {suggestions.map(s => (
+          <button key={s} onClick={() => setPrompt(s)} style={{
+            padding: "3px 8px", border: `1px solid ${prompt === s ? color : "#1e293b"}`,
+            borderRadius: "12px", background: prompt === s ? `${color}20` : "transparent",
+            color: prompt === s ? color : "#475569", fontSize: "9px", cursor: "pointer",
+            fontFamily: "'Courier New', monospace",
+          }}>{s}</button>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: "6px" }}>
+        <input
+          value={prompt}
+          onChange={e => setPrompt(e.target.value)}
+          onClick={e => e.stopPropagation()}
+          placeholder="or type anything… e.g. leftover prawns"
+          style={{
+            flex: 1, padding: "6px 9px", background: "rgba(255,255,255,0.03)",
+            border: `1px solid #1e293b`, borderRadius: "5px", color: "#e2e8f0",
+            fontSize: "10px", fontFamily: "'Courier New', monospace", outline: "none",
+          }}
+        />
+        <button onClick={(e) => { e.stopPropagation(); onSwap(prompt || ""); setShowInput(false); setPrompt(""); }} style={{
+          padding: "6px 10px", background: `${color}20`, border: `1px solid ${color}`,
+          borderRadius: "5px", color, fontSize: "10px", cursor: "pointer",
+          fontFamily: "'Courier New', monospace",
+        }}>GO</button>
+        <button onClick={(e) => { e.stopPropagation(); setShowInput(false); setPrompt(""); }} style={{
+          padding: "6px 8px", background: "transparent", border: "1px solid #1e293b",
+          borderRadius: "5px", color: "#475569", fontSize: "10px", cursor: "pointer",
+        }}>✕</button>
+      </div>
+    </div>
+  );
+}
+
 function StaticMealCard({ meal, color, onSwap, swapping, kept, onToggleKeep }) {
   const [open, setOpen] = useState(false);
   return (
@@ -290,16 +341,12 @@ function StaticMealCard({ meal, color, onSwap, swapping, kept, onToggleKeep }) {
             background: kept ? color : "transparent", border: `1px solid ${kept ? color : "#334155"}`,
             borderRadius: "3px", color: kept ? "#000" : "#334155", fontSize: "9px",
             cursor: "pointer", padding: "1px 5px", fontFamily: "'Courier New', monospace", lineHeight: 1.4, flexShrink: 0,
-          }} title={kept ? "Unlock meal" : "Lock meal"}>{kept ? "🔒" : "🔓"}</button>
+          }}>{kept ? "🔒" : "🔓"}</button>
           <span style={{ fontSize: "9px", color: kept ? color : "#94a3b8", letterSpacing: "1px" }}>{meal.meal.toUpperCase()}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span style={{ fontSize: "9px", color: "#475569" }}>P:{meal.p} C:{meal.c} F:{meal.f}</span>
-          {!kept && <button onClick={(e) => { e.stopPropagation(); onSwap && onSwap(); }} disabled={swapping} style={{
-            background: "transparent", border: `1px solid ${color}40`, borderRadius: "4px",
-            color: swapping ? "#334155" : color, fontSize: "10px", cursor: swapping ? "default" : "pointer",
-            padding: "1px 6px", fontFamily: "'Courier New', monospace", lineHeight: 1.4,
-          }}>{swapping ? "…" : "↻"}</button>}
+          {!kept && <SwapPrompt color={color} swapping={swapping} onSwap={(p) => onSwap && onSwap(p)} />}
           <span style={{ fontSize: "10px", color: "#334155" }}>{open ? "▲" : "▼"}</span>
         </div>
       </div>
@@ -341,11 +388,7 @@ function RecipeCard({ recipe, color, mealLabel, onSwap, swapping, kept, onToggle
             borderRadius: "3px", color: kept ? "#000" : "#334155", fontSize: "9px",
             cursor: "pointer", padding: "1px 5px", fontFamily: "'Courier New', monospace", lineHeight: 1.4,
           }}>{kept ? "🔒" : "🔓"}</button>
-          {onSwap && !kept && <button onClick={(e) => { e.stopPropagation(); onSwap(); }} disabled={swapping} style={{
-            background: "transparent", border: `1px solid ${color}40`, borderRadius: "4px",
-            color: swapping ? "#334155" : color, fontSize: "10px", cursor: swapping ? "default" : "pointer",
-            padding: "1px 6px", fontFamily: "'Courier New', monospace", lineHeight: 1.4,
-          }}>{swapping ? "…" : "↻"}</button>}
+          {onSwap && !kept && <SwapPrompt color={color} swapping={swapping} onSwap={(p) => onSwap && onSwap(p)} />}
           <span style={{ fontSize: "10px", color: "#334155" }}>{open ? "▲" : "▼"}</span>
         </div>
       </div>
@@ -471,11 +514,11 @@ function MacroPanel({ macroDay, fueling, km, phase, recipes, loadingRecipes, rec
           const isSwapping = swappingMeal === mealId;
           return recipes ? (
             <RecipeCard key={i} recipe={meal} color={color} mealLabel={meal.meal}
-              onSwap={() => onSwapMeal && onSwapMeal(mealId, { remP, remC, remF, count: freeMeals.length })}
+              onSwap={(userPrompt) => onSwapMeal && onSwapMeal(mealId, { remP, remC, remF, count: freeMeals.length }, userPrompt)}
               swapping={isSwapping} kept={isKept} onToggleKeep={() => toggleKeep(mealId)} />
           ) : (
             <StaticMealCard key={i} meal={meal} color={color}
-              onSwap={() => onSwapMeal && onSwapMeal(mealId, { remP, remC, remF, count: freeMeals.length })}
+              onSwap={(userPrompt) => onSwapMeal && onSwapMeal(mealId, { remP, remC, remF, count: freeMeals.length }, userPrompt)}
               swapping={isSwapping} kept={isKept} onToggleKeep={() => toggleKeep(mealId)} />
           );
         })}
@@ -803,7 +846,7 @@ export default function DayByDayPlan() {
                           setDayRecipeLoading(p => ({ ...p, [dayKey]: false }));
                         }}
                         swappingMeal={daySwappingMeal[dayKey] || null}
-                        onSwapMeal={async (mealName, budget) => {
+                        onSwapMeal={async (mealName, budget, userPrompt) => {
                           setDaySwappingMeal(p => ({ ...p, [dayKey]: mealName }));
                           try {
                             const apiKey = localStorage.getItem("oai_key");
@@ -812,7 +855,8 @@ export default function DayByDayPlan() {
                             const mealP = budget ? Math.round(budget.remP / Math.max(1, budget.count)) : Math.round(macroInfo.protein / 5);
                             const mealC = budget ? Math.round(budget.remC / Math.max(1, budget.count)) : Math.round(macroInfo.carbs   / 5);
                             const mealF = budget ? Math.round(budget.remF / Math.max(1, budget.count)) : Math.round(macroInfo.fat     / 5);
-                            const prompt = `You are a sports nutritionist. Generate 1 recipe for "${mealName}" for Ross Hunter (marathon runner, 90kg). Day type: ${macroInfo.label}. This meal's macro target: P:${mealP}g C:${mealC}g F:${mealF}g. No cottage cheese, no feta. Quick, practical, tasty. Exact quantities. Hit the macro targets as closely as possible. Respond ONLY as valid JSON: {"meal":"${mealName}","name":"...","time":"...","macros":{"kcal":0,"protein":0,"carbs":0,"fat":0},"ingredients":["..."],"method":["..."]}`;
+                            const cuisineNote = userPrompt ? `User request: "${userPrompt}". Build the recipe around this specifically.` : "Any cuisine, keep it interesting and varied.";
+                            const prompt = `You are a sports nutritionist creating a recipe for Ross Hunter (marathon runner, 90kg, training for Amsterdam Marathon). Meal: ${mealName}. Day type: ${macroInfo.label}. Macro target for this meal: P:${mealP}g C:${mealC}g F:${mealF}g. No cottage cheese, no feta. ${cuisineNote} Exact quantities. Practical to make. Hit the macro targets closely. Respond ONLY as valid JSON: {"meal":"${mealName}","name":"...","time":"...","macros":{"kcal":0,"protein":0,"carbs":0,"fat":0},"ingredients":["..."],"method":["..."]}`;
                             const res = await fetch("https://api.openai.com/v1/chat/completions", {
                               method: "POST",
                               headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
