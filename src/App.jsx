@@ -58,6 +58,133 @@ const macroData = {
   }
 };
 
+
+// Precision Hydration fueling plans — heavy sweater
+const fuelingPlans = {
+  easy_long: {
+    color: "#38bdf8", label: "Light Fueling",
+    steps: [
+      { time: "Night before", action: "PH 1000 tablet in 500ml water before bed" },
+      { time: "30 min pre-run", action: "500ml water + PH 1000 tablet" },
+      { time: "During", action: "Carry 500ml PH 1000, sip every 15 min" },
+      { time: "Post-run", action: "500ml water + PH 1000 to rehydrate" },
+    ],
+    note: "You sweat a lot — even easy runs over 60 min need electrolytes, especially in summer."
+  },
+  tempo: {
+    color: "#fb923c", label: "Tempo Fueling",
+    steps: [
+      { time: "Night before", action: "PH 1000 tablet in 500ml water" },
+      { time: "60 min pre", action: "Oats + banana" },
+      { time: "15 min pre", action: "500ml water + PH 1500 tablet — go straight to 1500, heavy sweater" },
+      { time: "During", action: "500ml PH 1500 on hand. Sip every 10–15 min. No gel needed for 10km." },
+      { time: "Post-run", action: "PH 1000 in 500ml within 30 min + protein meal" },
+    ],
+    note: "PH 1500 for tempo — your high sweat rate means you need max sodium even on shorter hard sessions."
+  },
+  intervals: {
+    color: "#fb923c", label: "Interval Fueling",
+    steps: [
+      { time: "Night before", action: "PH 1000 tablet in 500ml water" },
+      { time: "60 min pre", action: "Carb-rich meal — oats, banana, toast" },
+      { time: "15 min pre", action: "500ml water + PH 1500 tablet" },
+      { time: "During", action: "Bottle of PH 1500 nearby. Sip between reps, not during." },
+      { time: "Post", action: "PH 1000 + protein shake within 30 min" },
+    ],
+    note: "Short but brutal. Pre-hydrate well — you will sweat heavily in a short window."
+  },
+  long_base: {
+    color: "#a78bfa", label: "Long Run Fueling (Base Phase)",
+    steps: [
+      { time: "Night before", action: "PH 1500 in 500ml water + carb-heavy dinner" },
+      { time: "Morning", action: "Oats 100g + banana + 2 eggs. Eat 90 min before start." },
+      { time: "15 min pre", action: "500ml PH 1500 tablet" },
+      { time: "45 min in", action: "First gel — aim for 30g carbs (Maurten 100 or SiS Beta Fuel)" },
+      { time: "Every 45 min after", action: "Gel + 200–300ml PH 1500 from bottle" },
+      { time: "Post-run", action: "PH 1500 in 500ml immediately + recovery meal within 45 min" },
+    ],
+    note: "Carry at least 750ml–1L. As a heavy sweater, plan a refill or a loop route past home."
+  },
+  long_build: {
+    color: "#a78bfa", label: "Long Run Fueling (Build Phase)",
+    steps: [
+      { time: "Night before", action: "PH 1500 + carb load dinner (pasta/rice). 500ml water." },
+      { time: "Morning", action: "Oats 120g + banana + honey + 2 eggs. 90 min before start." },
+      { time: "15 min pre", action: "500ml PH 1500 + small banana" },
+      { time: "30 min in", action: "First gel. Start early — don't wait until you feel it." },
+      { time: "Every 40 min", action: "Gel (30–40g carbs) + 250ml PH 1500. Alternate with plain water." },
+      { time: "Last 5km pace section", action: "No gel — just water. Focus on running the pace." },
+      { time: "Post-run", action: "PH 1500 + chocolate milk or protein shake + carbs within 30 min" },
+    ],
+    note: "You need 3–4 gels for 26–30km. Practice your exact race-day fueling strategy in these sessions."
+  },
+  long_peak: {
+    color: "#a78bfa", label: "Long Run Fueling (Peak Phase)",
+    steps: [
+      { time: "2 days before", action: "Increase carb intake. PH 1000 daily." },
+      { time: "Night before", action: "Full carb load. PH 1500 in 750ml water before bed." },
+      { time: "Morning", action: "Oats 150g + 2 bananas + honey. 90–120 min before." },
+      { time: "15 min pre", action: "750ml PH 1500 + caffeine gel if using (only if already tested!)" },
+      { time: "Every 35–40 min", action: "Gel (40g carbs) + 200–250ml PH 1500" },
+      { time: "Marathon pace section", action: "Gel at start of MP section. Run your race-day rhythm." },
+      { time: "Post-run", action: "PH 1500 immediately + full recovery meal within 45 min" },
+    ],
+    note: "These are your race rehearsals. Use EXACTLY what you will use on race day. Zero experimenting."
+  },
+  marathon_pace: {
+    color: "#f97316", label: "Marathon Pace Run Fueling",
+    steps: [
+      { time: "Night before", action: "PH 1500 in 500ml + pasta or rice dinner" },
+      { time: "Morning", action: "Oats 100g + banana. 90 min before." },
+      { time: "15 min pre", action: "500ml PH 1500" },
+      { time: "Before pace section", action: "Take a gel just before switching to 5:41/km" },
+      { time: "During pace section", action: "250ml PH 1500 every 45 min. Practice sipping at pace." },
+      { time: "Post", action: "PH 1500 + protein meal" },
+    ],
+    note: "Practice drinking at marathon pace now — it feels different. Don\'t leave this skill to race day."
+  },
+  race: {
+    color: "#818cf8", label: "Race Day — Amsterdam Marathon",
+    steps: [
+      { time: "2 days before", action: "Carb loading starts. PH 1000 daily. Reduce fibre and fat." },
+      { time: "Night before", action: "PH 1500 in 750ml water + big pasta dinner. Early bed." },
+      { time: "Race morning", action: "Oats 150g + 2 bananas + honey. 3 hours before gun." },
+      { time: "90 min pre", action: "500ml PH 1500 tablet" },
+      { time: "15 min pre", action: "Caffeine gel (100mg) + 200ml water" },
+      { time: "km 8", action: "First gel. Do not wait until you need it." },
+      { time: "Every 8km after", action: "Gel + water at aid station. Carry PH tabs in pocket." },
+      { time: "km 30", action: "Caffeine gel if you have one. This is where races are won." },
+      { time: "Finish", action: "PH 1500 immediately. Sit. Eat within 30 min." },
+    ],
+    note: "Nothing new on race day. Every product you use must have been tested in your Peak long runs."
+  },
+};
+
+function FuelingPanel({ fueling }) {
+  if (!fueling) return null;
+  const f = fuelingPlans[fueling];
+  if (!f) return null;
+  return (
+    <div style={{ marginTop: "10px" }}>
+      <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "2px", marginBottom: "6px" }}>💧 PRECISION HYDRATION FUELING</div>
+      <div style={{ background: `${f.color}10`, border: `1px solid ${f.color}25`, borderRadius: "8px", padding: "10px 12px" }}>
+        <div style={{ fontSize: "9px", color: f.color, letterSpacing: "2px", marginBottom: "8px" }}>{f.label.toUpperCase()}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "5px", marginBottom: "8px" }}>
+          {f.steps.map((s, i) => (
+            <div key={i} style={{ display: "flex", gap: "8px" }}>
+              <div style={{ fontSize: "9px", color: f.color, minWidth: "90px", paddingTop: "1px", flexShrink: 0 }}>{s.time}</div>
+              <div style={{ fontSize: "10px", color: "#94a3b8", lineHeight: 1.4 }}>{s.action}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: "9px", color: "#64748b", borderTop: `1px solid ${f.color}20`, paddingTop: "7px", lineHeight: 1.5 }}>
+          ⚡ {f.note}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MacroBar({ value, max, color }) {
   return (
     <div style={{ background: "#1e293b", borderRadius: "3px", height: "5px", flex: 1 }}>
@@ -66,7 +193,7 @@ function MacroBar({ value, max, color }) {
   );
 }
 
-function MacroPanel({ macroDay }) {
+function MacroPanel({ macroDay, fueling }) {
   const m = macroData[macroDay];
   return (
     <div style={{ marginTop: "10px", borderTop: `1px solid ${m.color}30`, paddingTop: "10px" }}>
@@ -101,6 +228,7 @@ function MacroPanel({ macroDay }) {
           </div>
         ))}
       </div>
+      {fueling && <FuelingPanel fueling={fueling} />}
     </div>
   );
 }
@@ -116,7 +244,7 @@ function getWeekInPhase(date, phase) {
 
 function getDayActivity(date, phase, weekInPhase) {
   if (date.toDateString() === RACE_DATE.toDateString()) {
-    return { type: "RACE DAY 🏅", detail: "Amsterdam Marathon! Start conservative 5:50/km. Race hard from 30km.", icon: "🏅", macroDay: "hard", preferred: true };
+    return { type: "RACE DAY 🏅", detail: "Amsterdam Marathon! Start conservative 5:50/km. Race hard from 30km.", icon: "🏅", macroDay: "hard", preferred: true, fueling: "race" };
   }
   const dow = date.getDay();
   const progress = Math.min(weekInPhase / 7, 1);
@@ -126,12 +254,12 @@ function getDayActivity(date, phase, weekInPhase) {
     const easyKm = Math.round(8 + progress * 2);
     const friKm  = Math.round(6 + progress * 2);
     switch(dow) {
-      case 1: return { type: "Easy Run", detail: `${easyKm}km @ 6:30–6:45/km Zone 2`, icon: "🏃", macroDay: "easy", preferred: true };
+      case 1: return { type: "Easy Run", detail: `${easyKm}km @ 6:30–6:45/km Zone 2`, icon: "🏃", macroDay: "easy", preferred: true, fueling: easyKm >= 10 ? "easy_long" : null };
       case 2: return { type: "Rest / Walk", detail: "10,000 steps. Mobility & stretching.", icon: "🚶", macroDay: "rest", preferred: false };
-      case 3: return { type: "Tempo", detail: "10km: 2km warm up + 5km @ 5:25–5:30/km + cooldown", icon: "⚡", macroDay: "hard", preferred: true };
+      case 3: return { type: "Tempo", detail: "10km: 2km warm up + 5km @ 5:25–5:30/km + cooldown", icon: "⚡", macroDay: "hard", preferred: true, fueling: "tempo" };
       case 4: return { type: "Strength", detail: "Optional: 30min — glutes, single-leg, core", icon: "💪", macroDay: "active", preferred: false };
       case 5: return { type: "Strength + Easy", detail: `45min strength + ${friKm}km easy @ 6:40/km`, icon: "🏋️", macroDay: "easy", preferred: true };
-      case 6: return { type: "Long Run", detail: `${longKm}km @ 6:20–6:30/km easy`, icon: "🌅", macroDay: "hard", preferred: true };
+      case 6: return { type: "Long Run", detail: `${longKm}km @ 6:20–6:30/km easy`, icon: "🌅", macroDay: "hard", preferred: true, fueling: "long_base" };
       case 0: return { type: "Reformer Pilates", detail: "Full class. Glutes, hip flexors, core.", icon: "🧘", macroDay: "active", preferred: true };
     }
   }
@@ -143,10 +271,10 @@ function getDayActivity(date, phase, weekInPhase) {
     switch(dow) {
       case 1: return { type: "Easy Run", detail: `${easyKm}km @ 6:20–6:30/km Zone 2`, icon: "🏃", macroDay: "easy", preferred: true };
       case 2: return { type: "Rest / Optional", detail: "Easy 6km if Body Battery >60, otherwise rest", icon: "🚶", macroDay: "rest", preferred: false };
-      case 3: return { type: "Threshold", detail: "14km: warm up + 3×3km @ 5:20/km (90s rest) + cooldown", icon: "⚡", macroDay: "hard", preferred: true };
+      case 3: return { type: "Threshold", detail: "14km: warm up + 3×3km @ 5:20/km (90s rest) + cooldown", icon: "⚡", macroDay: "hard", preferred: true, fueling: "tempo" };
       case 4: return { type: "Strength", detail: "Strength — single-leg, core, glutes", icon: "💪", macroDay: "active", preferred: false };
-      case 5: return { type: "Marathon Pace", detail: `${totalMp}km with ${mpKm}km @ 5:41/km in the middle`, icon: "🎯", macroDay: "hard", preferred: true };
-      case 6: return { type: "Long Run", detail: `${longKm}km @ 6:15–6:25/km, last 5km @ 5:50/km`, icon: "🌅", macroDay: "hard", preferred: true };
+      case 5: return { type: "Marathon Pace", detail: `${totalMp}km with ${mpKm}km @ 5:41/km in the middle`, icon: "🎯", macroDay: "hard", preferred: true, fueling: "marathon_pace" };
+      case 6: return { type: "Long Run", detail: `${longKm}km @ 6:15–6:25/km, last 5km @ 5:50/km`, icon: "🌅", macroDay: "hard", preferred: true, fueling: "long_build" };
       case 0: return { type: "Reformer Pilates", detail: "Full class. Essential after Saturday long run.", icon: "🧘", macroDay: "active", preferred: true };
     }
   }
@@ -156,10 +284,10 @@ function getDayActivity(date, phase, weekInPhase) {
     switch(dow) {
       case 1: return { type: "Easy Run", detail: "12km @ 6:20/km Zone 2", icon: "🏃", macroDay: "easy", preferred: true };
       case 2: return { type: "Optional Easy", detail: "8km easy or rest. Check Body Battery first.", icon: "🚶", macroDay: "rest", preferred: false };
-      case 3: return { type: "Intervals", detail: "12km: 6×1km @ 5:05/km (2min rest) + warm up/cooldown", icon: "⚡", macroDay: "hard", preferred: true };
+      case 3: return { type: "Intervals", detail: "12km: 6×1km @ 5:05/km (2min rest) + warm up/cooldown", icon: "⚡", macroDay: "hard", preferred: true, fueling: "intervals" };
       case 4: return { type: "Strength", detail: "40min strength. Start reducing in final weeks.", icon: "💪", macroDay: "active", preferred: false };
-      case 5: return { type: "Tempo", detail: "16km: warm up + 10km @ 5:20/km + cooldown", icon: "🎯", macroDay: "hard", preferred: true };
-      case 6: return { type: "Peak Long Run", detail: `${longKm}km. Last ${mpKm}km @ 5:41/km marathon pace.`, icon: "🌅", macroDay: "hard", preferred: true };
+      case 5: return { type: "Tempo", detail: "16km: warm up + 10km @ 5:20/km + cooldown", icon: "🎯", macroDay: "hard", preferred: true, fueling: "tempo" };
+      case 6: return { type: "Peak Long Run", detail: `${longKm}km. Last ${mpKm}km @ 5:41/km marathon pace.`, icon: "🌅", macroDay: "hard", preferred: true, fueling: "long_peak" };
       case 0: return { type: "Reformer Pilates", detail: "Full class. Keeps you mobile through peak stress.", icon: "🧘", macroDay: "active", preferred: true };
     }
   }
@@ -309,7 +437,7 @@ export default function DayByDayPlan() {
                       </div>
 
                       {/* Expanded nutrition panel */}
-                      {isOpen && <MacroPanel macroDay={day.macroDay} />}
+                      {isOpen && <MacroPanel macroDay={day.macroDay} fueling={day.fueling} />}
                     </div>
                   );
                 })}
