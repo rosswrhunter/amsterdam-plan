@@ -1099,19 +1099,30 @@ export default function DayByDayPlan() {
     const updated = { ...overrides };
     weekDays.forEach(d => {
       const k = dateKey(d.date);
-      const isLongRun = d.type.includes("Long") || d.km >= 18;
-      const isHard = d.macroDay === "hard";
-      if (isLongRun) {
-        updated[k] = { type: "Easy Run (holiday)", detail: `${Math.min(8, d.km)}km easy — holiday week`, icon: "🏖️", macroDay: "easy", km: Math.min(8, d.km), preferred: true };
+      const isLongRun = d.type.toLowerCase().includes("long") || d.km >= 18;
+      const isHard = d.macroDay === "hard" || d.macroDay === "preload";
+      const isRest = !d.preferred;
+      if (isRest) {
+        updated[k] = { type: "Rest / Walk", detail: "Holiday rest day.", icon: "🏖️", macroDay: "rest", km: 0, preferred: false, _holidayWeek: true };
+      } else if (isLongRun) {
+        updated[k] = { type: "Easy Run (holiday)", detail: "8km easy — holiday week", icon: "🏖️", macroDay: "easy", km: 8, preferred: true, _holidayWeek: true };
       } else if (isHard) {
-        updated[k] = { type: "Easy Run (holiday)", detail: "6km easy — holiday week", icon: "🏖️", macroDay: "easy", km: 6, preferred: true };
-      } else if (d.preferred) {
-        // keep as-is, just note holiday
+        updated[k] = { type: "Easy Run (holiday)", detail: "6km easy — holiday week", icon: "🏖️", macroDay: "easy", km: 6, preferred: true, _holidayWeek: true };
+      } else {
+        // Keep easy runs and pilates but tag them
+        updated[k] = { ...d, detail: d.detail + " (holiday week)", _holidayWeek: true, _overridden: true };
       }
     });
     setOverrides(updated);
     localStorage.setItem("ams_overrides", JSON.stringify(updated));
     setHolidayWeek(null);
+  }
+
+  function resetWeek(weekDays) {
+    const updated = { ...overrides };
+    weekDays.forEach(d => { delete updated[dateKey(d.date)]; });
+    setOverrides(updated);
+    localStorage.setItem("ams_overrides", JSON.stringify(updated));
   }
 
   const activeRef = useRef(null);
@@ -1205,14 +1216,14 @@ export default function DayByDayPlan() {
                   const isOpen    = expanded === dayKey;
                   const mc        = macroColor[day.macroDay];
 
-                  const isEditingThis = editMode && editDay === dayKey;
+                  const isEditingThis = editMode && editDay === dateKey(day.date);
 
                   return (
                     <div key={i} ref={isActive ? activeRef : null}
                       onPointerDown={(e) => {
                         const timer = setTimeout(() => {
                           setEditMode(true);
-                          setEditDay(dayKey);
+                          setEditDay(dateKey(day.date));
                           setSwapSource(null);
                         }, 500);
                         e.currentTarget._lpTimer = timer;
@@ -1274,7 +1285,7 @@ export default function DayByDayPlan() {
                       {editMode && (isEditingThis || swapSource) && !isOpen && (
                         <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: "5px", marginTop: "6px", paddingTop: "6px", borderTop: "1px solid #1e293b" }}>
                           {swapSource && swapSource !== dayKey ? (
-                            <button onClick={() => swapDays(swapSource, dayKey)} style={{
+                            <button onClick={() => swapDays(swapSource, dateKey(day.date))} style={{
                               flex: 1, padding: "6px", background: "rgba(250,204,21,0.12)", border: "1px solid #facc15",
                               borderRadius: "5px", color: "#facc15", fontSize: "9px", cursor: "pointer", fontFamily: "'Courier New', monospace",
                             }}>↔ SWAP HERE</button>
@@ -1284,26 +1295,28 @@ export default function DayByDayPlan() {
                                 flex: 1, padding: "6px", background: "transparent", border: "1px solid #f97316",
                                 borderRadius: "5px", color: "#f97316", fontSize: "9px", cursor: "pointer", fontFamily: "'Courier New', monospace",
                               }}>✕ DONE</button>
-                              <button onClick={() => setSwapSource(swapSource === dayKey ? null : dayKey)} style={{
+                              <button onClick={() => setSwapSource(swapSource === dateKey(day.date) ? null : dateKey(day.date))} style={{
                                 flex: 1, padding: "6px",
-                                background: swapSource === dayKey ? "rgba(250,204,21,0.15)" : "transparent",
-                                border: `1px solid ${swapSource === dayKey ? "#facc15" : "#1e293b"}`,
-                                borderRadius: "5px", color: swapSource === dayKey ? "#facc15" : "#475569",
+                                background: swapSource === dateKey(day.date) ? "rgba(250,204,21,0.15)" : "transparent",
+                                border: `1px solid ${swapSource === dateKey(day.date) ? "#facc15" : "#1e293b"}`,
+                                borderRadius: "5px", color: swapSource === dateKey(day.date) ? "#facc15" : "#475569",
                                 fontSize: "9px", cursor: "pointer", fontFamily: "'Courier New', monospace",
-                              }}>{swapSource === dayKey ? "✕ CANCEL" : "⇄ SWAP"}</button>
+                              }}>{swapSource === dateKey(day.date) ? "✕ CANCEL" : "⇄ SWAP"}</button>
                               <button onClick={() => {
                                 const wdays = getWeekDays(day);
-                                setHolidayWeekMode(wdays);
+                                const hasOverrides = wdays.some(d => overrides[dateKey(d.date)]);
+                                if (hasOverrides) resetWeek(wdays);
+                                else setHolidayWeekMode(wdays);
                               }} style={{
                                 flex: 1, padding: "6px", background: "transparent", border: "1px solid #1e293b",
                                 borderRadius: "5px", color: "#475569", fontSize: "9px", cursor: "pointer", fontFamily: "'Courier New', monospace",
-                              }}>🏖 WEEK</button>
-                              <button onClick={() => skipDay(dayKey)} style={{
+                              }}>{getWeekDays(day).some(d => overrides[dateKey(d.date)]) ? "↺ WEEK" : "🏖 WEEK"}</button>
+                              <button onClick={() => skipDay(dateKey(day.date))} style={{
                                 flex: 1, padding: "6px", background: "transparent", border: "1px solid #1e293b",
                                 borderRadius: "5px", color: "#475569", fontSize: "9px", cursor: "pointer", fontFamily: "'Courier New', monospace",
                               }}>✕ SKIP</button>
                               {day._overridden && (
-                                <button onClick={() => clearOverride(dayKey)} style={{
+                                <button onClick={() => clearOverride(dateKey(day.date))} style={{
                                   flex: 1, padding: "6px", background: "rgba(74,222,128,0.08)", border: "1px solid #4ade8040",
                                   borderRadius: "5px", color: "#4ade80", fontSize: "9px", cursor: "pointer", fontFamily: "'Courier New', monospace",
                                 }}>↺ RESET</button>
