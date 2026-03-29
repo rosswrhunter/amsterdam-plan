@@ -364,7 +364,7 @@ function StaticMealCard({ meal, color, onSwap, swapping, kept, onToggleKeep }) {
           {!kept && (
             swapping
               ? <span style={{ fontSize: "10px", color: "#475569" }}>…</span>
-              : <button onClick={(e) => { e.stopPropagation(); setShowSwap(s => !s); setOpen(false); }} style={{
+              : <button onClick={(e) => { e.stopPropagation(); setShowSwap(s => !s); }} style={{
                   background: showSwap ? `${color}20` : "transparent", border: `1px solid ${color}40`, borderRadius: "4px",
                   color, fontSize: "10px", cursor: "pointer", padding: "1px 6px",
                   fontFamily: "'Courier New', monospace", lineHeight: 1.4,
@@ -417,7 +417,7 @@ function RecipeCard({ recipe, color, mealLabel, onSwap, swapping, kept, onToggle
           {onSwap && !kept && (
             swapping
               ? <span style={{ fontSize: "10px", color: "#475569" }}>…</span>
-              : <button onClick={(e) => { e.stopPropagation(); setShowSwap(s => !s); setOpen(false); }} style={{
+              : <button onClick={(e) => { e.stopPropagation(); setShowSwap(s => !s); }} style={{
                   background: showSwap ? `${color}20` : "transparent", border: `1px solid ${color}40`, borderRadius: "4px",
                   color, fontSize: "10px", cursor: "pointer", padding: "1px 6px",
                   fontFamily: "'Courier New', monospace", lineHeight: 1.4,
