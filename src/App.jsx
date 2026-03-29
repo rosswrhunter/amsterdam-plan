@@ -55,7 +55,31 @@ const macroData = {
       { meal: "Dinner", food: "White fish 220g + steamed broccoli + medium sweet potato", p: 48, c: 35, f: 8 },
       { meal: "Evening", food: "Cottage cheese 150g", p: 20, c: 5, f: 3 },
     ]
-  }
+  },
+  longrun: {
+    label: "Long Run Day", color: "#a78bfa", kcal: 3800, protein: 160, carbs: 520, fat: 85,
+    note: "Burns ~4,500–5,000 kcal (29km = ~2,600 kcal run alone at 90kg). Eat big. This is your highest carb day.",
+    meals: [
+      { meal: "Breakfast (90 min pre)", food: "Oats 150g + 2 bananas + honey + 2 eggs", p: 38, c: 165, f: 14 },
+      { meal: "During run", food: "PH Carb 30/90 gels every 40 min + PH 1500 (see fueling tab)", p: 4, c: 90, f: 2 },
+      { meal: "Post-run (within 30 min)", food: "Chocolate milk 500ml + banana + protein shake", p: 40, c: 80, f: 10 },
+      { meal: "Lunch", food: "Rice 300g cooked + chicken 200g + roasted veg + olive oil", p: 55, c: 100, f: 16 },
+      { meal: "Snack", food: "Bagel + peanut butter + Greek yogurt 150g", p: 28, c: 55, f: 18 },
+      { meal: "Dinner", food: "Salmon 200g + large pasta 150g dry + veg + olive oil", p: 48, c: 95, f: 22 },
+      { meal: "Evening", food: "Casein shake or cottage cheese 200g", p: 26, c: 10, f: 4 },
+    ]
+  },
+  preload: {
+    label: "Pre-Long Run Day (Carb Load)", color: "#c084fc", kcal: 2900, protein: 155, carbs: 420, fat: 70,
+    note: "Tomorrow is a long run. Load carbs tonight — especially dinner. Reduce fat and fibre so your gut is clear.",
+    meals: [
+      { meal: "Breakfast", food: "Oats 100g + banana + honey + Greek yogurt 150g", p: 30, c: 115, f: 8 },
+      { meal: "Lunch", food: "Rice 250g cooked + chicken 180g + veg (low fibre)", p: 50, c: 90, f: 8 },
+      { meal: "Snack", food: "Rice cakes x3 + jam + banana", p: 5, c: 65, f: 1 },
+      { meal: "Dinner ⭐", food: "LARGE pasta 200g dry + tomato sauce + lean chicken 150g. This is your most important meal.", p: 48, c: 130, f: 10 },
+      { meal: "Evening", food: "Greek yogurt 200g + honey + granola 50g", p: 22, c: 55, f: 8 },
+    ]
+  },
 };
 
 
@@ -258,8 +282,8 @@ function getDayActivity(date, phase, weekInPhase) {
       case 2: return { type: "Rest / Walk", detail: "10,000 steps. Mobility & stretching.", icon: "🚶", macroDay: "rest", preferred: false };
       case 3: return { type: "Tempo", detail: "10km: 2km warm up + 5km @ 5:25–5:30/km + cooldown", icon: "⚡", macroDay: "hard", preferred: true, fueling: "tempo" };
       case 4: return { type: "Strength", detail: "Optional: 30min — glutes, single-leg, core", icon: "💪", macroDay: "active", preferred: false };
-      case 5: return { type: "Strength + Easy", detail: `45min strength + ${friKm}km easy @ 6:40/km`, icon: "🏋️", macroDay: "easy", preferred: true };
-      case 6: return { type: "Long Run", detail: `${longKm}km @ 6:20–6:30/km easy`, icon: "🌅", macroDay: "hard", preferred: true, fueling: "long_base" };
+      case 5: return { type: "Strength + Easy", detail: `45min strength + ${friKm}km easy @ 6:40/km`, icon: "🏋️", macroDay: "preload", preferred: true };
+      case 6: return { type: "Long Run", detail: `${longKm}km @ 6:20–6:30/km easy`, icon: "🌅", macroDay: "longrun", preferred: true, fueling: "long_base" };
       case 0: return { type: "Reformer Pilates", detail: "Full class. Glutes, hip flexors, core.", icon: "🧘", macroDay: "active", preferred: true };
     }
   }
@@ -273,8 +297,8 @@ function getDayActivity(date, phase, weekInPhase) {
       case 2: return { type: "Rest / Optional", detail: "Easy 6km if Body Battery >60, otherwise rest", icon: "🚶", macroDay: "rest", preferred: false };
       case 3: return { type: "Threshold", detail: "14km: warm up + 3×3km @ 5:20/km (90s rest) + cooldown", icon: "⚡", macroDay: "hard", preferred: true, fueling: "tempo" };
       case 4: return { type: "Strength", detail: "Strength — single-leg, core, glutes", icon: "💪", macroDay: "active", preferred: false };
-      case 5: return { type: "Marathon Pace", detail: `${totalMp}km with ${mpKm}km @ 5:41/km in the middle`, icon: "🎯", macroDay: "hard", preferred: true, fueling: "marathon_pace" };
-      case 6: return { type: "Long Run", detail: `${longKm}km @ 6:15–6:25/km, last 5km @ 5:50/km`, icon: "🌅", macroDay: "hard", preferred: true, fueling: "long_build" };
+      case 5: return { type: "Marathon Pace", detail: `${totalMp}km with ${mpKm}km @ 5:41/km in the middle`, icon: "🎯", macroDay: "preload", preferred: true, fueling: "marathon_pace" };
+      case 6: return { type: "Long Run", detail: `${longKm}km @ 6:15–6:25/km, last 5km @ 5:50/km`, icon: "🌅", macroDay: "longrun", preferred: true, fueling: "long_build" };
       case 0: return { type: "Reformer Pilates", detail: "Full class. Essential after Saturday long run.", icon: "🧘", macroDay: "active", preferred: true };
     }
   }
@@ -286,8 +310,8 @@ function getDayActivity(date, phase, weekInPhase) {
       case 2: return { type: "Optional Easy", detail: "8km easy or rest. Check Body Battery first.", icon: "🚶", macroDay: "rest", preferred: false };
       case 3: return { type: "Intervals", detail: "12km: 6×1km @ 5:05/km (2min rest) + warm up/cooldown", icon: "⚡", macroDay: "hard", preferred: true, fueling: "intervals" };
       case 4: return { type: "Strength", detail: "40min strength. Start reducing in final weeks.", icon: "💪", macroDay: "active", preferred: false };
-      case 5: return { type: "Tempo", detail: "16km: warm up + 10km @ 5:20/km + cooldown", icon: "🎯", macroDay: "hard", preferred: true, fueling: "tempo" };
-      case 6: return { type: "Peak Long Run", detail: `${longKm}km. Last ${mpKm}km @ 5:41/km marathon pace.`, icon: "🌅", macroDay: "hard", preferred: true, fueling: "long_peak" };
+      case 5: return { type: "Tempo", detail: "16km: warm up + 10km @ 5:20/km + cooldown", icon: "🎯", macroDay: "preload", preferred: true, fueling: "tempo" };
+      case 6: return { type: "Peak Long Run", detail: `${longKm}km. Last ${mpKm}km @ 5:41/km marathon pace.`, icon: "🌅", macroDay: "longrun", preferred: true, fueling: "long_peak" };
       case 0: return { type: "Reformer Pilates", detail: "Full class. Keeps you mobile through peak stress.", icon: "🧘", macroDay: "active", preferred: true };
     }
   }
@@ -302,7 +326,7 @@ function getDayActivity(date, phase, weekInPhase) {
       case 4: return { type: "Rest", detail: "Rest. Walk only.", icon: "😴", macroDay: "rest", preferred: false };
       case 5: return { type: "Easy Strides", detail: "5km easy + 4×100m strides. Stay sharp.", icon: "🏃", macroDay: "easy", preferred: true };
       case 6:
-        if (isRaceEve) return { type: "Rest", detail: "Race eve 🍝 Pasta dinner, early sleep, bib pinned.", icon: "🍝", macroDay: "hard", preferred: true };
+        if (isRaceEve) return { type: "Rest", detail: "Race eve 🍝 Pasta dinner, early sleep, bib pinned.", icon: "🍝", macroDay: "preload", preferred: true };
         return { type: "Long Run", detail: daysToRace > 21 ? "22km easy — last big effort" : "14km easy", icon: "🌅", macroDay: "hard", preferred: true };
       case 0: return { type: "Reformer Pilates", detail: "Full class. Keep the routine through taper.", icon: "🧘", macroDay: "active", preferred: true };
     }
@@ -310,8 +334,8 @@ function getDayActivity(date, phase, weekInPhase) {
   return { type: "Rest", detail: "Rest", icon: "😴", macroDay: "rest", preferred: false };
 }
 
-const macroCals  = { hard: 2800, easy: 2400, active: 2200, rest: 2000 };
-const macroColor = { hard: "#f97316", easy: "#60a5fa", active: "#4ade80", rest: "#818cf8" };
+const macroCals  = { hard: 2800, easy: 2400, active: 2200, rest: 2000, longrun: 3800, preload: 2900 };
+const macroColor = { hard: "#f97316", easy: "#60a5fa", active: "#4ade80", rest: "#818cf8", longrun: "#a78bfa", preload: "#c084fc" };
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const DAYS   = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
