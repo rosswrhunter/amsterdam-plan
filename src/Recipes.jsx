@@ -140,6 +140,20 @@ export default function Recipes({ allDays }) {
   const [error, setError] = useState(null);
   const [swappingMeal, setSwappingMeal] = useState(null);
 
+  async function callAI(prompt) {
+    const apiKey = localStorage.getItem("oai_key");
+    if (!apiKey) throw new Error("No OpenAI key — add it in the Coach tab first.");
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+      body: JSON.stringify({ model: "gpt-4o", max_tokens: 1500, messages: [{ role: "user", content: prompt }] }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const text = data.choices?.[0]?.message?.content || "";
+    return JSON.parse(text.replace(/```json|```/g, "").trim());
+  }
+
   async function generate(overrideMacroDay, overrideMode, overrideMeal) {
     const md = overrideMacroDay || macroDay;
     const mo = overrideMode || mode;
@@ -147,21 +161,10 @@ export default function Recipes({ allDays }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{ role: "user", content: buildPrompt(md, mo, sm) }],
-        }),
-      });
-      const data = await res.json();
-      const text = data.content?.find(b => b.type === "text")?.text || "";
-      const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
+      const parsed = await callAI(buildPrompt(md, mo, sm));
       setResult({ type: mo, data: parsed, macroDay: md });
     } catch (e) {
-      setError("Failed to generate recipes. Try again.");
+      setError(e.message || "Failed to generate recipes. Try again.");
     }
     setLoading(false);
   }
@@ -169,18 +172,7 @@ export default function Recipes({ allDays }) {
   async function swapMeal(mealName) {
     setSwappingMeal(mealName);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{ role: "user", content: buildPrompt(result.macroDay, "single", mealName) }],
-        }),
-      });
-      const data = await res.json();
-      const text = data.content?.find(b => b.type === "text")?.text || "";
-      const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
+      const parsed = await callAI(buildPrompt(result.macroDay, "single", mealName));
       // Replace that meal in the existing full-day result
       setResult(prev => ({
         ...prev,

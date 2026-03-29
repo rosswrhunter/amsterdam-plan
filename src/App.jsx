@@ -221,6 +221,8 @@ const DISLIKED = ["cottage cheese"];
 
 async function generateDayRecipes(macroDay) {
   const m = macroData[macroDay] || macroData["hard"];
+  const apiKey = localStorage.getItem("oai_key");
+  if (!apiKey) throw new Error("No OpenAI key — add it in the Coach tab first.");
   const prompt = `You are a sports nutritionist creating recipes for Ross Hunter, a 39yo male marathon runner (90kg, Amsterdam Marathon 2026 goal sub-4:00).
 
 Day type: ${m.label}
@@ -246,17 +248,18 @@ Respond ONLY with valid JSON, no markdown:
     }
   ]
 }`;
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
+      model: "gpt-4o",
+      max_tokens: 1500,
       messages: [{ role: "user", content: prompt }],
     }),
   });
   const data = await res.json();
-  const text = data.content?.find(b => b.type === "text")?.text || "";
+  if (data.error) throw new Error(data.error.message);
+  const text = data.choices?.[0]?.message?.content || "";
   return JSON.parse(text.replace(/```json|```/g, "").trim());
 }
 
