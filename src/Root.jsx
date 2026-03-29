@@ -4,12 +4,14 @@ import App, { generateAllDays, calcDayMacros } from './App.jsx'
 import AICoach from './AICoach.jsx'
 import WorkoutLog from './WorkoutLog.jsx'
 import Memory from './Memory.jsx'
+import Recipes from './Recipes.jsx'
 
 const TABS = [
-  { id: "plan",   label: "PLAN",   icon: "📅" },
-  { id: "log",    label: "LOG",    icon: "✍️" },
-  { id: "coach",  label: "COACH",  icon: "🤖" },
-  { id: "memory", label: "NOTES",  icon: "🧠" },
+  { id: "plan",    label: "PLAN",    icon: "📅" },
+  { id: "log",     label: "LOG",     icon: "✍️" },
+  { id: "recipes", label: "RECIPES", icon: "🍳" },
+  { id: "coach",   label: "COACH",   icon: "🤖" },
+  { id: "memory",  label: "NOTES",   icon: "🧠" },
 ];
 
 export default function Root() {
@@ -72,10 +74,11 @@ export default function Root() {
       </div>
 
       {/* Tab content */}
-      {tab === "plan"   && <App />}
-      {tab === "log"    && <WorkoutLog log={workoutLog} onAdd={addWorkout} onDelete={deleteWorkout} allDays={generateAllDays()} />}
-      {tab === "coach"  && <AICoach memory={memory} workoutLog={workoutLog} allDays={generateAllDays()} calcDayMacros={calcDayMacros} />}
-      {tab === "memory" && <Memory memory={memory} onSave={saveMemory} />}
+      {tab === "plan"    && <App />}
+      {tab === "log"     && <WorkoutLog log={workoutLog} onAdd={addWorkout} onDelete={deleteWorkout} allDays={generateAllDays()} />}
+      {tab === "recipes" && <Recipes allDays={generateAllDays()} />}
+      {tab === "coach"   && <AICoach memory={memory} workoutLog={workoutLog} allDays={generateAllDays()} calcDayMacros={calcDayMacros} />}
+      {tab === "memory"  && <Memory memory={memory} onSave={saveMemory} />}
     </div>
   );
 }

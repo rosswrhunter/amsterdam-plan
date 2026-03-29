@@ -217,10 +217,88 @@ function MacroBar({ value, max, color }) {
   );
 }
 
+const DISLIKED = ["cottage cheese"];
+
+async function generateDayRecipes(macroDay) {
+  const m = macroData[macroDay] || macroData["hard"];
+  const prompt = `You are a sports nutritionist creating recipes for Ross Hunter, a 39yo male marathon runner (90kg, Amsterdam Marathon 2026 goal sub-4:00).
+
+Day type: ${m.label}
+Daily targets: ${m.kcal} kcal | Protein: ${m.protein}g | Carbs: ${m.carbs}g | Fat: ${m.fat}g
+
+Generate a full day meal plan with 5–6 meals (Breakfast, Pre-run snack if needed, Lunch, Afternoon snack, Dinner, Evening snack).
+
+IMPORTANT:
+- Do NOT use: ${DISLIKED.join(", ")}
+- Quick to make (under 30 min), practical, tasty
+- Exact quantities in grams/ml
+
+Respond ONLY with valid JSON, no markdown:
+{
+  "meals": [
+    {
+      "meal": "Breakfast",
+      "name": "Recipe name",
+      "time": "5 min",
+      "macros": { "kcal": 0, "protein": 0, "carbs": 0, "fat": 0 },
+      "ingredients": ["200g item"],
+      "method": ["Step 1"]
+    }
+  ]
+}`;
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  const data = await res.json();
+  const text = data.content?.find(b => b.type === "text")?.text || "";
+  return JSON.parse(text.replace(/```json|```/g, "").trim());
+}
+
+function RecipeCard({ recipe, color }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${open ? color : "#1e293b"}`, borderRadius: "8px", marginBottom: "6px", overflow: "hidden" }}>
+      <div onClick={() => setOpen(o => !o)} style={{ padding: "9px 11px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "6px" }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: "11px", fontWeight: "bold", color: "#e2e8f0" }}>{recipe.name}</div>
+          <div style={{ display: "flex", gap: "6px", marginTop: "3px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "9px", color: "#475569" }}>⏱ {recipe.time}</span>
+            <span style={{ fontSize: "9px", color: "#4ade80" }}>{recipe.macros?.kcal} kcal</span>
+            <span style={{ fontSize: "9px", color: "#60a5fa" }}>P:{recipe.macros?.protein}g</span>
+            <span style={{ fontSize: "9px", color: "#facc15" }}>C:{recipe.macros?.carbs}g</span>
+          </div>
+        </div>
+        <span style={{ fontSize: "10px", color: "#334155" }}>{open ? "▲" : "▼"}</span>
+      </div>
+      {open && (
+        <div style={{ padding: "0 11px 11px", borderTop: "1px solid #1e293b" }}>
+          <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "2px", margin: "8px 0 4px" }}>INGREDIENTS</div>
+          {recipe.ingredients?.map((ing, i) => <div key={i} style={{ fontSize: "10px", color: "#94a3b8", padding: "2px 0" }}>• {ing}</div>)}
+          <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "2px", margin: "8px 0 4px" }}>METHOD</div>
+          {recipe.method?.map((step, i) => (
+            <div key={i} style={{ display: "flex", gap: "7px", marginBottom: "4px" }}>
+              <span style={{ fontSize: "10px", color, fontWeight: "bold", minWidth: "14px" }}>{i+1}.</span>
+              <span style={{ fontSize: "10px", color: "#94a3b8", lineHeight: 1.5 }}>{step}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MacroPanel({ macroDay, fueling, km }) {
   const m = macroData[macroDay] || macroData["hard"];
   const dyn = calcDayMacros(macroDay, km);
   const color = m.color;
+  const [recipes, setRecipes] = useState(null);
+  const [loadingRecipes, setLoadingRecipes] = useState(false);
 
   return (
     <div style={{ marginTop: "10px", borderTop: `1px solid ${color}30`, paddingTop: "10px" }}>
@@ -274,6 +352,41 @@ function MacroPanel({ macroDay, fueling, km }) {
         ))}
       </div>
       {fueling && <FuelingPanel fueling={fueling} />}
+
+      {/* Recipe Generator */}
+      <div style={{ marginTop: "10px" }}>
+        <button
+          onClick={async () => {
+            if (recipes) { setRecipes(null); return; }
+            setLoadingRecipes(true);
+            try { const r = await generateDayRecipes(macroDay); setRecipes(r); }
+            catch { /* silent */ }
+            setLoadingRecipes(false);
+          }}
+          disabled={loadingRecipes}
+          style={{
+            width: "100%", padding: "10px",
+            background: loadingRecipes ? "rgba(255,255,255,0.02)" : `${color}10`,
+            border: `1px solid ${loadingRecipes ? "#1e293b" : color + "50"}`,
+            borderRadius: "7px", color: loadingRecipes ? "#334155" : color,
+            fontSize: "10px", letterSpacing: "2px", cursor: loadingRecipes ? "default" : "pointer",
+            fontFamily: "'Courier New', monospace", transition: "all 0.2s",
+          }}>
+          {loadingRecipes ? "GENERATING RECIPES…" : recipes ? "✕ HIDE RECIPES" : "🍳 GENERATE DAY RECIPES"}
+        </button>
+
+        {recipes && (
+          <div style={{ marginTop: "10px" }}>
+            <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "2px", marginBottom: "8px" }}>AI RECIPES · {m.label.toUpperCase()}</div>
+            {recipes.meals?.map((meal, i) => (
+              <div key={i}>
+                <div style={{ fontSize: "9px", color, letterSpacing: "1px", margin: "8px 0 4px" }}>{meal.meal?.toUpperCase()}</div>
+                <RecipeCard recipe={meal} color={color} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
