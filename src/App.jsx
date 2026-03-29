@@ -18,7 +18,7 @@ const macroData = {
       { meal: "Breakfast", food: "Oats 100g + banana + 2 eggs + Greek yogurt 150g", p: 35, c: 105, f: 13 },
       { meal: "Pre-run", food: "2 rice cakes + honey + banana", p: 3, c: 50, f: 1 },
       { meal: "Lunch", food: "Rice 250g cooked + chicken 180g + veg", p: 52, c: 90, f: 8 },
-      { meal: "Snack", food: "Cottage cheese 200g + apple + rice cake", p: 26, c: 35, f: 4 },
+      { meal: "Snack", food: "Greek yogurt 200g + apple + rice cake", p: 26, c: 35, f: 4 },
       { meal: "Dinner", food: "Salmon 180g + large sweet potato + green veg", p: 44, c: 55, f: 20 },
       { meal: "Evening", food: "Greek yogurt 200g or casein shake", p: 24, c: 15, f: 5 },
     ]
@@ -42,7 +42,7 @@ const macroData = {
       { meal: "Lunch", food: "Large salad + tuna 180g + chickpeas 120g + olive oil", p: 46, c: 45, f: 18 },
       { meal: "Snack", food: "Protein shake + handful walnuts", p: 30, c: 8, f: 18 },
       { meal: "Dinner", food: "Chicken thighs 220g + roasted veg + lentils 120g + rice 100g", p: 50, c: 55, f: 15 },
-      { meal: "Evening", food: "Cottage cheese 200g", p: 24, c: 8, f: 4 },
+      { meal: "Evening", food: "Greek yogurt 200g", p: 24, c: 8, f: 4 },
     ]
   },
   rest: {
@@ -53,7 +53,7 @@ const macroData = {
       { meal: "Lunch", food: "Large salad + grilled chicken 180g + chickpeas 80g + olive oil", p: 48, c: 30, f: 18 },
       { meal: "Snack", food: "Protein shake + celery/cucumber", p: 25, c: 5, f: 3 },
       { meal: "Dinner", food: "White fish 220g + steamed broccoli + medium sweet potato", p: 48, c: 35, f: 8 },
-      { meal: "Evening", food: "Cottage cheese 150g", p: 20, c: 5, f: 3 },
+      { meal: "Evening", food: "Greek yogurt 150g", p: 20, c: 5, f: 3 },
     ]
   },
   longrun: {
@@ -66,7 +66,7 @@ const macroData = {
       { meal: "Lunch", food: "Rice 300g cooked + chicken 200g + roasted veg + olive oil", p: 55, c: 100, f: 16 },
       { meal: "Snack", food: "Bagel + peanut butter + Greek yogurt 150g", p: 28, c: 55, f: 18 },
       { meal: "Dinner", food: "Salmon 200g + large pasta 150g dry + veg + olive oil", p: 48, c: 95, f: 22 },
-      { meal: "Evening", food: "Casein shake or cottage cheese 200g", p: 26, c: 10, f: 4 },
+      { meal: "Evening", food: "Casein shake or Greek yogurt 200g", p: 26, c: 10, f: 4 },
     ]
   },
   preload: {
