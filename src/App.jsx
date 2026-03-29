@@ -263,12 +263,13 @@ Respond ONLY with valid JSON, no markdown:
   return JSON.parse(text.replace(/```json|```/g, "").trim());
 }
 
-function RecipeCard({ recipe, color }) {
+function RecipeCard({ recipe, color, mealLabel }) {
   const [open, setOpen] = useState(false);
   return (
-    <div style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${open ? color : "#1e293b"}`, borderRadius: "8px", marginBottom: "6px", overflow: "hidden" }}>
-      <div onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }} style={{ padding: "9px 11px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "6px" }}>
+    <div style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${open ? color : "#1e293b"}`, borderRadius: "6px", marginBottom: "4px", overflow: "hidden" }}>
+      <div onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }} style={{ padding: "8px 10px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "6px" }}>
         <div style={{ flex: 1 }}>
+          {mealLabel && <div style={{ fontSize: "9px", color, letterSpacing: "1px", marginBottom: "2px" }}>{mealLabel.toUpperCase()}</div>}
           <div style={{ fontSize: "11px", fontWeight: "bold", color: "#e2e8f0" }}>{recipe.name}</div>
           <div style={{ display: "flex", gap: "6px", marginTop: "3px", flexWrap: "wrap" }}>
             <span style={{ fontSize: "9px", color: "#475569" }}>⏱ {recipe.time}</span>
@@ -341,53 +342,45 @@ function MacroPanel({ macroDay, fueling, km, recipes, loadingRecipes, recipeErro
 
       {/* Meals */}
       <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "2px", marginBottom: "6px" }}>MEALS</div>
+      {/* Meals — static until recipes generated, then replaced inline */}
       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-        {m.meals.map(meal => (
-          <div key={meal.meal} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid #1e293b", borderRadius: "6px", padding: "7px 10px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
-              <span style={{ fontSize: "9px", color, letterSpacing: "1px" }}>{meal.meal.toUpperCase()}</span>
-              <span style={{ fontSize: "9px", color: "#475569" }}>P:{meal.p} C:{meal.c} F:{meal.f}</span>
+        {(recipes ? recipes.meals : m.meals).map((meal, i) => {
+          const isRecipe = !!recipes;
+          const mealName = isRecipe ? meal.meal : meal.meal;
+          return isRecipe ? (
+            <RecipeCard key={i} recipe={meal} color={color} mealLabel={meal.meal} />
+          ) : (
+            <div key={meal.meal} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid #1e293b", borderRadius: "6px", padding: "7px 10px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
+                <span style={{ fontSize: "9px", color, letterSpacing: "1px" }}>{meal.meal.toUpperCase()}</span>
+                <span style={{ fontSize: "9px", color: "#475569" }}>P:{meal.p} C:{meal.c} F:{meal.f}</span>
+              </div>
+              <div style={{ fontSize: "10px", color: "#94a3b8" }}>{meal.food}</div>
             </div>
-            <div style={{ fontSize: "10px", color: "#94a3b8" }}>{meal.food}</div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
       {fueling && <FuelingPanel fueling={fueling} />}
 
-      {/* Recipe Generator */}
+      {/* Generate / hide button */}
       <div style={{ marginTop: "10px" }}>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onGenerateRecipes();
-          }}
+          onClick={(e) => { e.stopPropagation(); onGenerateRecipes(); }}
           disabled={loadingRecipes}
           style={{
-            width: "100%", padding: "10px",
-            background: loadingRecipes ? "rgba(255,255,255,0.02)" : `${color}10`,
-            border: `1px solid ${loadingRecipes ? "#1e293b" : color + "50"}`,
-            borderRadius: "7px", color: loadingRecipes ? "#334155" : color,
-            fontSize: "10px", letterSpacing: "2px", cursor: loadingRecipes ? "default" : "pointer",
+            width: "100%", padding: "9px",
+            background: "transparent",
+            border: `1px dashed ${loadingRecipes ? "#1e293b" : color + "50"}`,
+            borderRadius: "7px", color: loadingRecipes ? "#334155" : color + "99",
+            fontSize: "9px", letterSpacing: "2px", cursor: loadingRecipes ? "default" : "pointer",
             fontFamily: "'Courier New', monospace", transition: "all 0.2s",
           }}>
-          {loadingRecipes ? "GENERATING RECIPES…" : recipes ? "✕ HIDE RECIPES" : "🍳 GENERATE DAY RECIPES"}
+          {loadingRecipes ? "GENERATING RECIPES…" : recipes ? "✕ SHOW SIMPLE MEALS" : "🍳 GENERATE RECIPES"}
         </button>
-
         {recipeError && (
-          <div onClick={e => e.stopPropagation()} style={{ marginTop: "8px", background: "rgba(239,68,68,0.08)", border: "1px solid #ef444430", borderRadius: "6px", padding: "8px 10px", fontSize: "10px", color: "#ef4444" }}>
+          <div onClick={e => e.stopPropagation()} style={{ marginTop: "6px", background: "rgba(239,68,68,0.08)", border: "1px solid #ef444430", borderRadius: "6px", padding: "8px 10px", fontSize: "10px", color: "#ef4444" }}>
             ⚠ {recipeError}
-          </div>
-        )}
-
-        {recipes && (
-          <div style={{ marginTop: "10px" }}>
-            <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "2px", marginBottom: "8px" }}>AI RECIPES · {m.label.toUpperCase()}</div>
-            {recipes.meals?.map((meal, i) => (
-              <div key={i}>
-                <div style={{ fontSize: "9px", color, letterSpacing: "1px", margin: "8px 0 4px" }}>{meal.meal?.toUpperCase()}</div>
-                <RecipeCard recipe={meal} color={color} />
-              </div>
-            ))}
           </div>
         )}
       </div>
