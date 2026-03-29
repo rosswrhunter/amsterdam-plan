@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { dbGet, dbSet } from "./db.js";
 
 const RACE_DATE = new Date(2026, 9, 18);
 const START_DATE = new Date(2026, 2, 28);
@@ -1046,26 +1047,35 @@ export default function DayByDayPlan() {
   const [dayPhotoLog, setDayPhotoLog] = useState(() => {
     try { return JSON.parse(localStorage.getItem("ams_photolog") || "{}"); } catch { return {}; }
   });
+  useEffect(() => {
+    dbGet("ams_photolog").then(v => { if (v) setDayPhotoLog(v); });
+  }, []);
   function savePhotoLog(key, entries) {
     const updated = { ...dayPhotoLog, [key]: entries };
     setDayPhotoLog(updated);
     localStorage.setItem("ams_photolog", JSON.stringify(updated));
+    dbSet("ams_photolog", updated);
   }
 
   // Plan overrides — keyed by dateKey, stores custom activity or null (skip)
   const [overrides, setOverrides] = useState(() => {
     try { return JSON.parse(localStorage.getItem("ams_overrides") || "{}"); } catch { return {}; }
   });
+  useEffect(() => {
+    dbGet("ams_overrides").then(v => { if (v) setOverrides(v); });
+  }, []);
   function saveOverride(key, value) {
     const updated = { ...overrides, [key]: value };
     setOverrides(updated);
     localStorage.setItem("ams_overrides", JSON.stringify(updated));
+    dbSet("ams_overrides", updated);
   }
   function clearOverride(key) {
     const updated = { ...overrides };
     delete updated[key];
     setOverrides(updated);
     localStorage.setItem("ams_overrides", JSON.stringify(updated));
+    dbSet("ams_overrides", updated);
   }
 
   // Edit mode
@@ -1088,6 +1098,7 @@ export default function DayByDayPlan() {
     const updated = { ...overrides, [keyA]: actB, [keyB]: actA };
     setOverrides(updated);
     localStorage.setItem("ams_overrides", JSON.stringify(updated));
+    dbSet("ams_overrides", updated);
     setSwapSource(null);
   }
 
@@ -1115,6 +1126,7 @@ export default function DayByDayPlan() {
     });
     setOverrides(updated);
     localStorage.setItem("ams_overrides", JSON.stringify(updated));
+    dbSet("ams_overrides", updated);
     setHolidayWeek(null);
   }
 
@@ -1126,6 +1138,7 @@ export default function DayByDayPlan() {
     });
     setOverrides(updated);
     localStorage.setItem("ams_overrides", JSON.stringify(updated));
+    dbSet("ams_overrides", updated);
   }
 
   const activeRef = useRef(null);

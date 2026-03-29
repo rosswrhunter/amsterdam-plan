@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { dbGet, dbSet } from "./db.js";
 import { calcDayMacros } from "./App.jsx";
 
 const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -26,6 +27,9 @@ export default function WeeklySummary({ allDays, workoutLog }) {
   const [weight, setWeight] = useState(() => {
     try { return JSON.parse(localStorage.getItem("ams_weights") || "[]"); } catch { return []; }
   });
+  useEffect(() => {
+    dbGet("ams_weights").then(v => { if (v) setWeight(v); });
+  }, []);
   const [weightInput, setWeightInput] = useState("");
   const [showWeightInput, setShowWeightInput] = useState(false);
 
@@ -67,6 +71,7 @@ export default function WeeklySummary({ allDays, workoutLog }) {
     const updated = [...weight.filter(x => x.date !== today), { date: today, w }].sort((a,b) => a.date.localeCompare(b.date));
     setWeight(updated);
     localStorage.setItem("ams_weights", JSON.stringify(updated));
+    dbSet("ams_weights", updated);
     setWeightInput("");
     setShowWeightInput(false);
   }

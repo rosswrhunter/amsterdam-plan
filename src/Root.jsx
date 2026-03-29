@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { dbGet, dbSet, dbGetAll, migrateFromLocalStorage } from './db.js'
 import Login from './Login.jsx'
 import App, { generateAllDays, calcDayMacros } from './App.jsx'
 import AICoach from './AICoach.jsx'
@@ -41,26 +42,42 @@ export default function Root() {
   }, []);
 
   // Persistent state — all stored in localStorage
-  const [memory, setMemory] = useState(() => localStorage.getItem("ams_memory") || "");
-  const [workoutLog, setWorkoutLog] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("ams_log") || "[]"); } catch { return []; }
-  });
+  const [memory, setMemory] = useState("");
+  const [workoutLog, setWorkoutLog] = useState([]);
+  const [dbReady, setDbReady] = useState(false);
+
+  // Load all data from Supabase on mount, migrate localStorage if needed
+  useEffect(() => {
+    async function loadData() {
+      await migrateFromLocalStorage();
+      const all = await dbGetAll();
+      if (all["ams_memory"]) setMemory(all["ams_memory"]);
+      else setMemory(localStorage.getItem("ams_memory") || "");
+      if (all["ams_log"]) setWorkoutLog(all["ams_log"]);
+      else { try { setWorkoutLog(JSON.parse(localStorage.getItem("ams_log") || "[]")); } catch {} }
+      setDbReady(true);
+    }
+    loadData();
+  }, []);
 
   function saveMemory(text) {
     setMemory(text);
     localStorage.setItem("ams_memory", text);
+    dbSet("ams_memory", text);
   }
 
   function addWorkout(entry) {
     const updated = [...workoutLog, entry];
     setWorkoutLog(updated);
     localStorage.setItem("ams_log", JSON.stringify(updated));
+    dbSet("ams_log", updated);
   }
 
   function deleteWorkout(id) {
     const updated = workoutLog.filter(w => w.id !== id);
     setWorkoutLog(updated);
     localStorage.setItem("ams_log", JSON.stringify(updated));
+    dbSet("ams_log", updated);
   }
 
   if (!authed) return <Login onLogin={() => setAuthed(true)} />;
