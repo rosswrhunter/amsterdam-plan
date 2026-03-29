@@ -253,7 +253,7 @@ Respond ONLY with valid JSON, no markdown:
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
     body: JSON.stringify({
       model: "gpt-4o",
-      max_tokens: 1500,
+      max_tokens: 3000,
       messages: [{ role: "user", content: prompt }],
     }),
   });

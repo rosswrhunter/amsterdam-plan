@@ -146,7 +146,7 @@ export default function Recipes({ allDays }) {
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: "gpt-4o", max_tokens: 1500, messages: [{ role: "user", content: prompt }] }),
+      body: JSON.stringify({ model: "gpt-4o", max_tokens: 3000, messages: [{ role: "user", content: prompt }] }),
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error.message);
