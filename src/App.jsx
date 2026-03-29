@@ -1070,6 +1070,7 @@ export default function DayByDayPlan() {
 
   // Edit mode
   const [editMode, setEditMode] = useState(false);
+  const [editDay, setEditDay] = useState(null); // dayKey of long-pressed day
   const [swapSource, setSwapSource] = useState(null); // dayKey of first selected day for swap
   const [holidayWeek, setHolidayWeek] = useState(null); // week start dateKey being modified
 
@@ -1167,23 +1168,9 @@ export default function DayByDayPlan() {
           <div style={{ fontSize: "10px", color: "#475569", letterSpacing: "1px" }}>
             28 Mar → 18 Oct · {allDays.length} days · Tap any day for nutrition
           </div>
-          <button onClick={() => { setEditMode(e => !e); setSwapSource(null); }} style={{
-            padding: "4px 10px", border: `1px solid ${editMode ? "#f97316" : "#1e293b"}`,
-            borderRadius: "5px", background: editMode ? "rgba(249,115,22,0.12)" : "transparent",
-            color: editMode ? "#f97316" : "#475569", fontSize: "9px", cursor: "pointer",
-            fontFamily: "'Courier New', monospace", letterSpacing: "1px",
-          }}>{editMode ? "✕ DONE" : "✎ EDIT"}</button>
+
         </div>
-        {editMode && swapSource && (
-          <div style={{ fontSize: "9px", color: "#facc15", letterSpacing: "1px", marginBottom: "6px" }}>
-            ↔ Tap another day to swap with it · tap ✕ to cancel
-          </div>
-        )}
-        {editMode && !swapSource && (
-          <div style={{ fontSize: "9px", color: "#f97316", letterSpacing: "1px", marginBottom: "6px" }}>
-            ✎ Edit mode · tap ⇄ to swap · 🏖 holiday week · ✕ skip day
-          </div>
-        )}
+
         <div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "2px", WebkitOverflowScrolling: "touch" }}>
           {["ALL","BASE","BUILD","PEAK","TAPER"].map(f => {
             const ph = phases.find(p => p.name === f);
@@ -1218,12 +1205,31 @@ export default function DayByDayPlan() {
                   const isOpen    = expanded === dayKey;
                   const mc        = macroColor[day.macroDay];
 
+                  const isEditingThis = editMode && editDay === dayKey;
+
                   return (
                     <div key={i} ref={isActive ? activeRef : null}
-                      onClick={() => setExpanded(isOpen ? null : dayKey)}
+                      onPointerDown={(e) => {
+                        const timer = setTimeout(() => {
+                          setEditMode(true);
+                          setEditDay(dayKey);
+                          setSwapSource(null);
+                        }, 500);
+                        e.currentTarget._lpTimer = timer;
+                      }}
+                      onPointerUp={(e) => {
+                        if (e.currentTarget._lpTimer) clearTimeout(e.currentTarget._lpTimer);
+                      }}
+                      onPointerLeave={(e) => {
+                        if (e.currentTarget._lpTimer) clearTimeout(e.currentTarget._lpTimer);
+                      }}
+                      onClick={() => {
+                        if (editMode) return; // don't expand in edit mode
+                        setExpanded(isOpen ? null : dayKey);
+                      }}
                       style={{
                         background: isRace ? "rgba(129,140,248,0.12)" : isActive ? "rgba(74,222,128,0.07)" : day.preferred ? "rgba(255,255,255,0.025)" : "rgba(255,255,255,0.008)",
-                        border: `1px solid ${isOpen ? mc : isRace ? "#818cf8" : isActive ? "#4ade8060" : day.preferred ? "#1e293b" : "#0f172a"}`,
+                        border: `1px solid ${isEditingThis ? "#f97316" : isOpen ? mc : isRace ? "#818cf8" : isActive ? "#4ade8060" : day.preferred ? "#1e293b" : "#0f172a"}`,
                         borderLeft: `3px solid ${day.phase.color}`,
                         borderRadius: "8px", padding: "9px 12px",
                         cursor: "pointer", transition: "border-color 0.15s",
@@ -1264,8 +1270,8 @@ export default function DayByDayPlan() {
                         </div>
                       </div>
 
-                      {/* Edit mode controls */}
-                      {editMode && !isOpen && (
+                      {/* Edit mode controls — shown on long-pressed day or swap target */}
+                      {editMode && (isEditingThis || swapSource) && !isOpen && (
                         <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: "5px", marginTop: "6px", paddingTop: "6px", borderTop: "1px solid #1e293b" }}>
                           {swapSource && swapSource !== dayKey ? (
                             <button onClick={() => swapDays(swapSource, dayKey)} style={{
@@ -1274,6 +1280,10 @@ export default function DayByDayPlan() {
                             }}>↔ SWAP HERE</button>
                           ) : (
                             <>
+                              <button onClick={(e) => { e.stopPropagation(); setEditMode(false); setEditDay(null); setSwapSource(null); }} style={{
+                                flex: 1, padding: "6px", background: "transparent", border: "1px solid #f97316",
+                                borderRadius: "5px", color: "#f97316", fontSize: "9px", cursor: "pointer", fontFamily: "'Courier New', monospace",
+                              }}>✕ DONE</button>
                               <button onClick={() => setSwapSource(swapSource === dayKey ? null : dayKey)} style={{
                                 flex: 1, padding: "6px",
                                 background: swapSource === dayKey ? "rgba(250,204,21,0.15)" : "transparent",
