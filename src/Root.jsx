@@ -10,6 +10,9 @@ import Readiness from './Readiness.jsx'
 import WeeklySummary from './WeeklySummary.jsx'
 import ShoppingList from './ShoppingList.jsx'
 import RaceSimulator from './RaceSimulator.jsx'
+import RacePredictor from './RacePredictor.jsx'
+import NotificationSettings from './Notifications.jsx'
+import { checkAndFireNotifications } from './Notifications.jsx'
 
 const CORE_TABS = [
   { id: "plan",    label: "PLAN",    icon: "📅" },
@@ -20,10 +23,11 @@ const CORE_TABS = [
 ];
 
 const MORE_TABS = [
-  { id: "shop",    label: "Shopping List",    icon: "🛒" },
-  { id: "recipes", label: "Recipes",  icon: "🍳" },
-  { id: "race",    label: "Race Simulator",    icon: "🏅" },
-  { id: "memory",  label: "Notes",   icon: "🧠" },
+  { id: "shop",    label: "Shopping List", icon: "🛒" },
+  { id: "recipes", label: "Recipes",       icon: "🍳" },
+  { id: "race",    label: "Race Simulator",icon: "🏅" },
+  { id: "predict", label: "Race Predictor",icon: "📈" },
+  { id: "memory",  label: "Notes",         icon: "🧠" },
 ];
 
 export default function Root() {
@@ -159,6 +163,7 @@ export default function Root() {
       {tab === "recipes" && <Recipes allDays={generateAllDays()} />}
       {tab === "coach"   && <AICoach memory={memory} workoutLog={workoutLog} allDays={generateAllDays()} calcDayMacros={calcDayMacros} />}
       {tab === "memory"  && <Memory memory={memory} onSave={saveMemory} />}
+      {tab === "predict" && <RacePredictor workoutLog={workoutLog} />}
     </div>
   );
 }

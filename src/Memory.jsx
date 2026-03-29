@@ -1,4 +1,5 @@
 import { useState } from "react";
+import NotificationSettings from "./Notifications.jsx";
 
 export default function Memory({ memory, onSave }) {
   const [text, setText] = useState(memory);
@@ -61,6 +62,10 @@ export default function Memory({ memory, onSave }) {
         ].map(tip => (
           <div key={tip} style={{ fontSize: "10px", color: "#64748b", padding: "3px 0", lineHeight: 1.4 }}>→ {tip}</div>
         ))}
+      </div>
+
+      <div style={{ marginTop: "20px" }}>
+        <NotificationSettings />
       </div>
     </div>
   );
