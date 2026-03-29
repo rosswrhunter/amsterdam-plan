@@ -267,7 +267,7 @@ function RecipeCard({ recipe, color }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${open ? color : "#1e293b"}`, borderRadius: "8px", marginBottom: "6px", overflow: "hidden" }}>
-      <div onClick={() => setOpen(o => !o)} style={{ padding: "9px 11px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "6px" }}>
+      <div onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }} style={{ padding: "9px 11px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "6px" }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: "11px", fontWeight: "bold", color: "#e2e8f0" }}>{recipe.name}</div>
           <div style={{ display: "flex", gap: "6px", marginTop: "3px", flexWrap: "wrap" }}>
