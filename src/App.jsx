@@ -406,6 +406,7 @@ function RecipeCard({ recipe, color, mealLabel, onSwap, swapping, kept, onToggle
             <span style={{ fontSize: "9px", color: "#4ade80" }}>{recipe.macros?.kcal} kcal</span>
             <span style={{ fontSize: "9px", color: "#60a5fa" }}>P:{recipe.macros?.protein}g</span>
             <span style={{ fontSize: "9px", color: "#facc15" }}>C:{recipe.macros?.carbs}g</span>
+            <span style={{ fontSize: "9px", color: "#f97316" }}>F:{recipe.macros?.fat}g</span>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
