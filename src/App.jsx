@@ -345,9 +345,10 @@ function SwapPanel({ color, onSwap, onClose }) {
   );
 }
 
-function StaticMealCard({ meal, color, onSwap, swapping, kept, onToggleKeep }) {
+function StaticMealCard({ meal, color, onSwap, swapping, kept, onToggleKeep, onLog, logEntry }) {
   const [open, setOpen] = useState(false);
   const [showSwap, setShowSwap] = useState(false);
+  const [showLog, setShowLog] = useState(false);
   return (
     <div style={{ background: kept ? `${color}08` : "rgba(255,255,255,0.02)", border: `1px solid ${kept ? color + "60" : (open || showSwap) ? color : "#1e293b"}`, borderRadius: "6px", marginBottom: "4px", overflow: "hidden" }}>
       <div onClick={(e) => { e.stopPropagation(); if (!showSwap) setOpen(o => !o); }} style={{ padding: "8px 10px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
@@ -364,16 +365,26 @@ function StaticMealCard({ meal, color, onSwap, swapping, kept, onToggleKeep }) {
           {!kept && (
             swapping
               ? <span style={{ fontSize: "10px", color: "#475569" }}>…</span>
-              : <button onClick={(e) => { e.stopPropagation(); setShowSwap(s => !s); }} style={{
-                  background: showSwap ? `${color}20` : "transparent", border: `1px solid ${color}40`, borderRadius: "4px",
-                  color, fontSize: "10px", cursor: "pointer", padding: "1px 6px",
-                  fontFamily: "'Courier New', monospace", lineHeight: 1.4,
-                }}>↻</button>
+              : <>
+                  <button onClick={(e) => { e.stopPropagation(); setShowSwap(s => !s); setShowLog(false); }} style={{
+                    background: showSwap ? `${color}20` : "transparent", border: `1px solid ${color}40`, borderRadius: "4px",
+                    color, fontSize: "10px", cursor: "pointer", padding: "1px 6px",
+                    fontFamily: "'Courier New', monospace", lineHeight: 1.4,
+                  }}>↻</button>
+                  <button onClick={(e) => { e.stopPropagation(); setShowLog(s => !s); setShowSwap(false); }} style={{
+                    background: showLog ? "rgba(74,222,128,0.15)" : logEntry ? "rgba(74,222,128,0.08)" : "transparent",
+                    border: `1px solid ${logEntry ? "#4ade8060" : showLog ? "#4ade80" : "#1e293b"}`, borderRadius: "4px",
+                    color: logEntry ? "#4ade80" : "#475569", fontSize: "10px", cursor: "pointer", padding: "1px 6px",
+                    fontFamily: "'Courier New', monospace", lineHeight: 1.4,
+                  }}>{logEntry ? "✓" : "📋"}</button>
+                </>
           )}
           <span style={{ fontSize: "10px", color: "#334155" }}>{open ? "▲" : "▼"}</span>
         </div>
       </div>
       {showSwap && <SwapPanel color={color} onSwap={(p) => { onSwap && onSwap(p); setShowSwap(false); }} onClose={() => setShowSwap(false)} />}
+      {showLog && <MealLogPanel mealName={mealLabel || "Meal"} entry={logEntry} color={color} onSave={(e) => { onLog && onLog(e); if (e) setShowLog(false); }} onClose={() => setShowLog(false)} />}
+      {showLog && <MealLogPanel mealName={meal.meal} entry={logEntry} color={color} onSave={(e) => { onLog && onLog(e); if (e) setShowLog(false); }} onClose={() => setShowLog(false)} />}
       {open && (
         <div style={{ padding: "0 10px 10px", borderTop: "1px solid #1e293b" }}>
           <div style={{ fontSize: "11px", color: "#94a3b8", lineHeight: 1.6, marginTop: "8px" }}>{meal.food}</div>
@@ -391,9 +402,10 @@ function StaticMealCard({ meal, color, onSwap, swapping, kept, onToggleKeep }) {
   );
 }
 
-function RecipeCard({ recipe, color, mealLabel, onSwap, swapping, kept, onToggleKeep }) {
+function RecipeCard({ recipe, color, mealLabel, onSwap, swapping, kept, onToggleKeep, onLog, logEntry }) {
   const [open, setOpen] = useState(false);
   const [showSwap, setShowSwap] = useState(false);
+  const [showLog, setShowLog] = useState(false);
   return (
     <div style={{ background: kept ? `${color}08` : "rgba(255,255,255,0.02)", border: `1px solid ${kept ? color + "60" : (open || showSwap) ? color : "#1e293b"}`, borderRadius: "6px", marginBottom: "4px", overflow: "hidden" }}>
       <div onClick={(e) => { e.stopPropagation(); if (!showSwap) setOpen(o => !o); }} style={{ padding: "8px 10px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "6px" }}>
@@ -417,16 +429,26 @@ function RecipeCard({ recipe, color, mealLabel, onSwap, swapping, kept, onToggle
           {onSwap && !kept && (
             swapping
               ? <span style={{ fontSize: "10px", color: "#475569" }}>…</span>
-              : <button onClick={(e) => { e.stopPropagation(); setShowSwap(s => !s); }} style={{
-                  background: showSwap ? `${color}20` : "transparent", border: `1px solid ${color}40`, borderRadius: "4px",
-                  color, fontSize: "10px", cursor: "pointer", padding: "1px 6px",
-                  fontFamily: "'Courier New', monospace", lineHeight: 1.4,
-                }}>↻</button>
+              : <>
+                  <button onClick={(e) => { e.stopPropagation(); setShowSwap(s => !s); setShowLog(false); }} style={{
+                    background: showSwap ? `${color}20` : "transparent", border: `1px solid ${color}40`, borderRadius: "4px",
+                    color, fontSize: "10px", cursor: "pointer", padding: "1px 6px",
+                    fontFamily: "'Courier New', monospace", lineHeight: 1.4,
+                  }}>↻</button>
+                  <button onClick={(e) => { e.stopPropagation(); setShowLog(s => !s); setShowSwap(false); }} style={{
+                    background: showLog ? "rgba(74,222,128,0.15)" : logEntry ? "rgba(74,222,128,0.08)" : "transparent",
+                    border: `1px solid ${logEntry ? "#4ade8060" : showLog ? "#4ade80" : "#1e293b"}`, borderRadius: "4px",
+                    color: logEntry ? "#4ade80" : "#475569", fontSize: "10px", cursor: "pointer", padding: "1px 6px",
+                    fontFamily: "'Courier New', monospace", lineHeight: 1.4,
+                  }}>{logEntry ? "✓" : "📋"}</button>
+                </>
           )}
           <span style={{ fontSize: "10px", color: "#334155" }}>{open ? "▲" : "▼"}</span>
         </div>
       </div>
       {showSwap && <SwapPanel color={color} onSwap={(p) => { onSwap && onSwap(p); setShowSwap(false); }} onClose={() => setShowSwap(false)} />}
+      {showLog && <MealLogPanel mealName={mealLabel || "Meal"} entry={logEntry} color={color} onSave={(e) => { onLog && onLog(e); if (e) setShowLog(false); }} onClose={() => setShowLog(false)} />}
+      {showLog && <MealLogPanel mealName={meal.meal} entry={logEntry} color={color} onSave={(e) => { onLog && onLog(e); if (e) setShowLog(false); }} onClose={() => setShowLog(false)} />}
       {open && (
         <div style={{ padding: "0 11px 11px", borderTop: "1px solid #1e293b" }}>
           <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "2px", margin: "8px 0 4px" }}>INGREDIENTS</div>
@@ -445,165 +467,233 @@ function RecipeCard({ recipe, color, mealLabel, onSwap, swapping, kept, onToggle
 }
 
 
-function PhotoLogger({ photoLog, onSave, targets, color }) {
-  const [analysing, setAnalysing] = useState(null); // meal name being analysed
+// Shared AI macro analyser — used by both meal log and extras
+async function analyseMacros({ text, imageB64, mealName }) {
+  const apiKey = localStorage.getItem("oai_key");
+  if (!apiKey) throw new Error("No OpenAI key — add it in Coach tab.");
+
+  const isPhoto = !!imageB64;
+  const prompt = isPhoto
+    ? `Analyse this meal photo and estimate macros for a 90kg male marathon runner.\nMeal: ${mealName || "unknown"}.\nReturn ONLY valid JSON:\n{"description":"what you see","kcal":0,"protein":0,"carbs":0,"fat":0,"confidence":"high/medium/low","notes":""}`
+    : `Calculate macros for: "${text}"\nFor a 90kg male marathon runner. Be precise with quantities.\nReturn ONLY valid JSON:\n{"description":"${text}","kcal":0,"protein":0,"carbs":0,"fat":0,"confidence":"high/medium/low","notes":""}`;
+
+  const msgContent = isPhoto
+    ? [{ type: "text", text: prompt }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageB64}`, detail: "high" } }]
+    : prompt;
+
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: "gpt-4o", max_tokens: 300,
+      messages: [
+        { role: "system", content: "You are a JSON API. Return only a raw JSON object, no markdown." },
+        { role: "user", content: msgContent }
+      ]
+    }),
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return safeParseJSON(data.choices?.[0]?.message?.content || "");
+}
+
+// Inline log panel that opens inside each meal card
+function MealLogPanel({ mealName, entry, onSave, onClose, color }) {
+  const [mode, setMode] = useState("text"); // "text" | "photo"
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const fileRefs = {};
 
-  // Sum all logged entries
-  const totalActual = photoLog.reduce((s, e) => ({
-    kcal: s.kcal + (e.kcal || 0),
-    protein: s.protein + (e.protein || 0),
-    carbs: s.carbs + (e.carbs || 0),
-    fat: s.fat + (e.fat || 0),
-  }), { kcal: 0, protein: 0, carbs: 0, fat: 0 });
-
-  async function analysePhoto(file, mealName) {
-    const apiKey = localStorage.getItem("oai_key");
-    if (!apiKey) { setError("No OpenAI key — add it in Coach tab."); return; }
-
-    setAnalysing(mealName);
-    setError(null);
-
-    const b64 = await new Promise(res => {
-      const reader = new FileReader();
-      reader.onload = ev => res(ev.target.result.split(",")[1]);
-      reader.readAsDataURL(file);
-    });
-
-    const prompt = `Analyse this meal photo and estimate the macros for a marathon runner (90kg male).
-
-Look carefully at portion sizes, ingredients visible, and cooking method.
-Be realistic about quantities — typical meal portions.
-Meal slot: ${mealName}
-
-Return ONLY valid JSON, no markdown:
-{"description":"brief description of what you see","kcal":0,"protein":0,"carbs":0,"fat":0,"confidence":"high/medium/low","notes":"any caveats"}`;
-
+  async function submitText() {
+    if (!input.trim()) return;
+    setLoading(true); setError(null);
     try {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer \${apiKey}` },
-        body: JSON.stringify({
-          model: "gpt-4o", max_tokens: 400,
-          messages: [{
-            role: "user",
-            content: [
-              { type: "text", text: prompt },
-              { type: "image_url", image_url: { url: `data:image/jpeg;base64,\${b64}`, detail: "high" } }
-            ]
-          }]
-        }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error.message);
-      const text = data.choices?.[0]?.message?.content || "";
-      const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
-      const newEntry = {
-        meal: mealName,
-        preview: `data:image/jpeg;base64,\${b64}`,
-        ...parsed,
-        timestamp: Date.now(),
-      };
-      onSave([...photoLog.filter(e => e.meal !== mealName), newEntry]);
-    } catch (e) {
-      setError(e.message || "Analysis failed.");
-    }
-    setAnalysing(null);
+      const result = await analyseMacros({ text: input, mealName });
+      onSave({ ...result, meal: mealName, source: "text", input, timestamp: Date.now() });
+    } catch(e) { setError(e.message); }
+    setLoading(false);
   }
 
-  function removeEntry(mealName) {
-    onSave(photoLog.filter(e => e.meal !== mealName));
+  async function submitPhoto(file) {
+    setLoading(true); setError(null);
+    const b64 = await new Promise(res => { const r = new FileReader(); r.onload = ev => res(ev.target.result.split(",")[1]); r.readAsDataURL(file); });
+    try {
+      const result = await analyseMacros({ imageB64: b64, mealName });
+      onSave({ ...result, meal: mealName, source: "photo", preview: `data:image/jpeg;base64,${b64}`, timestamp: Date.now() });
+    } catch(e) { setError(e.message); }
+    setLoading(false);
   }
-
-  const confColor = c => c === "high" ? "#4ade80" : c === "medium" ? "#facc15" : "#f97316";
 
   return (
-    <div style={{ marginTop: "14px", borderTop: `1px solid \${color}20`, paddingTop: "12px" }}>
-      <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "2px", marginBottom: "10px" }}>📸 ACTUAL vs TARGET</div>
+    <div onClick={e => e.stopPropagation()} style={{ padding: "12px", borderTop: `1px solid ${color}30`, background: "rgba(0,0,0,0.3)" }}>
+      {/* If already logged, show entry */}
+      {entry && (
+        <div style={{ marginBottom: "10px", background: "rgba(255,255,255,0.03)", border: `1px solid ${color}30`, borderRadius: "7px", padding: "8px 10px" }}>
+          <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+            {entry.preview && <img src={entry.preview} alt="" style={{ width: "44px", height: "44px", borderRadius: "5px", objectFit: "cover", flexShrink: 0 }} />}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: "10px", color: "#94a3b8", lineHeight: 1.4, marginBottom: "4px" }}>{entry.description || entry.input}</div>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <span style={{ fontSize: "9px", color: "#4ade80" }}>{entry.kcal} kcal</span>
+                <span style={{ fontSize: "9px", color: "#60a5fa" }}>P:{entry.protein}g</span>
+                <span style={{ fontSize: "9px", color: "#facc15" }}>C:{entry.carbs}g</span>
+                <span style={{ fontSize: "9px", color: "#f97316" }}>F:{entry.fat}g</span>
+              </div>
+            </div>
+            <button onClick={() => onSave(null)} style={{ background: "transparent", border: "none", color: "#334155", cursor: "pointer", fontSize: "13px", padding: "0", flexShrink: 0 }}>✕</button>
+          </div>
+          <button onClick={() => onSave(null)} style={{ marginTop: "8px", width: "100%", padding: "6px", background: "transparent", border: "1px solid #1e293b", borderRadius: "5px", color: "#475569", fontSize: "9px", cursor: "pointer", fontFamily: "'Courier New', monospace", letterSpacing: "1px" }}>↻ RE-LOG</button>
+        </div>
+      )}
 
-      {/* Progress bars */}
+      {!entry && (
+        <>
+          {/* Mode toggle */}
+          <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
+            {[["text","✏️ Type what you ate"],["photo","📷 Photo"]].map(([m, label]) => (
+              <button key={m} onClick={() => setMode(m)} style={{
+                flex: 1, padding: "7px", border: `1px solid ${mode === m ? color : "#1e293b"}`,
+                borderRadius: "6px", background: mode === m ? `${color}18` : "transparent",
+                color: mode === m ? color : "#475569", fontSize: "10px", cursor: "pointer",
+                fontFamily: "'Courier New', monospace",
+              }}>{label}</button>
+            ))}
+          </div>
+
+          {mode === "text" && (
+            <>
+              <textarea value={input} onChange={e => setInput(e.target.value)} onClick={e => e.stopPropagation()}
+                placeholder={"e.g. 100g oats, 200ml oat milk, 1 banana, 1 tbsp honey"}
+                style={{ width: "100%", padding: "9px 10px", background: "rgba(255,255,255,0.04)", border: "1px solid #1e293b", borderRadius: "7px", color: "#e2e8f0", fontSize: "11px", fontFamily: "'Courier New', monospace", resize: "none", height: "70px", boxSizing: "border-box", outline: "none", marginBottom: "8px" }}
+              />
+              <button onClick={submitText} disabled={loading || !input.trim()} style={{
+                width: "100%", padding: "10px", background: loading ? "rgba(255,255,255,0.02)" : `${color}18`,
+                border: `1px solid ${loading ? "#1e293b" : color}`, borderRadius: "7px",
+                color: loading ? "#334155" : color, fontSize: "11px", cursor: loading ? "default" : "pointer",
+                fontFamily: "'Courier New', monospace", fontWeight: "bold",
+              }}>{loading ? "CALCULATING…" : "✦ CALCULATE MACROS"}</button>
+            </>
+          )}
+
+          {mode === "photo" && (
+            <label style={{ display: "block", border: `1px dashed ${color}40`, borderRadius: "8px", padding: "20px", textAlign: "center", cursor: loading ? "default" : "pointer" }}>
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => { if (e.target.files[0]) submitPhoto(e.target.files[0]); e.target.value = ""; }} disabled={loading} />
+              <div style={{ fontSize: "24px", marginBottom: "6px" }}>{loading ? "⏳" : "📷"}</div>
+              <div style={{ fontSize: "11px", color: "#475569" }}>{loading ? "Analysing…" : "Tap to take or upload photo"}</div>
+            </label>
+          )}
+        </>
+      )}
+
+      {error && <div style={{ marginTop: "8px", fontSize: "10px", color: "#ef4444" }}>⚠ {error}</div>}
+      <button onClick={onClose} style={{ marginTop: "8px", width: "100%", padding: "7px", background: "transparent", border: "1px solid #0f172a", borderRadius: "5px", color: "#334155", fontSize: "9px", cursor: "pointer", fontFamily: "'Courier New', monospace" }}>CLOSE</button>
+    </div>
+  );
+}
+
+// Day-level actual vs target summary + extras logger
+function DayLogger({ photoLog, onSave, targets, color }) {
+  const [showExtras, setShowExtras] = useState(false);
+  const [extraInput, setExtraInput] = useState("");
+  const [extraLoading, setExtraLoading] = useState(false);
+
+  const mealEntries = photoLog.filter(e => e.meal !== "__extra__");
+  const extraEntries = photoLog.filter(e => e.meal === "__extra__");
+
+  const total = photoLog.reduce((s, e) => ({
+    kcal: s.kcal + (e.kcal || 0), protein: s.protein + (e.protein || 0),
+    carbs: s.carbs + (e.carbs || 0), fat: s.fat + (e.fat || 0),
+  }), { kcal: 0, protein: 0, carbs: 0, fat: 0 });
+
+  async function addExtra() {
+    if (!extraInput.trim()) return;
+    setExtraLoading(true);
+    try {
+      const result = await analyseMacros({ text: extraInput, mealName: "Extra" });
+      onSave([...photoLog, { ...result, meal: "__extra__", input: extraInput, timestamp: Date.now() }]);
+      setExtraInput("");
+    } catch(e) {}
+    setExtraLoading(false);
+  }
+
+  async function addExtraPhoto(file) {
+    setExtraLoading(true);
+    const b64 = await new Promise(res => { const r = new FileReader(); r.onload = ev => res(ev.target.result.split(",")[1]); r.readAsDataURL(file); });
+    try {
+      const result = await analyseMacros({ imageB64: b64, mealName: "Extra" });
+      onSave([...photoLog, { ...result, meal: "__extra__", preview: `data:image/jpeg;base64,${b64}`, timestamp: Date.now() }]);
+    } catch(e) {}
+    setExtraLoading(false);
+  }
+
+  const logged = photoLog.length > 0;
+
+  return (
+    <div style={{ marginTop: "14px", borderTop: `1px solid ${color}20`, paddingTop: "12px" }}>
+      <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "2px", marginBottom: "10px" }}>📊 ACTUAL vs TARGET</div>
+
       {[
-        { label: "KCAL",    actual: totalActual.kcal,    target: targets.kcal,    unit: "",  col: color },
-        { label: "PROTEIN", actual: totalActual.protein, target: targets.protein, unit: "g", col: "#60a5fa" },
-        { label: "CARBS",   actual: totalActual.carbs,   target: targets.carbs,   unit: "g", col: "#facc15" },
-        { label: "FAT",     actual: totalActual.fat,     target: targets.fat,     unit: "g", col: "#f97316" },
+        { label: "KCAL",    actual: total.kcal,    target: targets.kcal,    unit: "",  col: color },
+        { label: "PROTEIN", actual: total.protein, target: targets.protein, unit: "g", col: "#60a5fa" },
+        { label: "CARBS",   actual: total.carbs,   target: targets.carbs,   unit: "g", col: "#facc15" },
+        { label: "FAT",     actual: total.fat,     target: targets.fat,     unit: "g", col: "#f97316" },
       ].map(bar => {
-        const pct = target => Math.min(100, Math.round((bar.actual / Math.max(1, target)) * 100));
+        const pct = Math.min(100, Math.round((bar.actual / Math.max(1, bar.target)) * 100));
         const over = bar.actual > bar.target * 1.1;
-        const close = bar.actual >= bar.target * 0.85;
-        const statusCol = photoLog.length === 0 ? "#1e293b" : over ? "#f97316" : close ? "#4ade80" : "#facc15";
+        const statusCol = !logged ? "#1e293b" : over ? "#f97316" : bar.actual >= bar.target * 0.85 ? "#4ade80" : "#facc15";
         return (
           <div key={bar.label} style={{ marginBottom: "8px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
               <span style={{ fontSize: "9px", color: "#475569", letterSpacing: "1px" }}>{bar.label}</span>
-              <span style={{ fontSize: "10px", color: statusCol, fontWeight: "bold" }}>
-                {bar.actual}{bar.unit} <span style={{ color: "#334155" }}>/ {bar.target}{bar.unit}</span>
-              </span>
+              <span style={{ fontSize: "10px", fontWeight: "bold", color: statusCol }}>{bar.actual}{bar.unit} <span style={{ color: "#334155", fontWeight: "normal" }}>/ {bar.target}{bar.unit}</span></span>
             </div>
-            <div style={{ background: "#1e293b", borderRadius: "3px", height: "5px", position: "relative" }}>
-              <div style={{ background: statusCol, borderRadius: "3px", height: "5px", width: `\${pct(bar.target)}%`, transition: "width 0.4s" }} />
-              {/* Target marker */}
-              <div style={{ position: "absolute", top: "-2px", left: "100%", transform: "translateX(-1px)", width: "1px", height: "9px", background: "#475569" }} />
+            <div style={{ background: "#1e293b", borderRadius: "3px", height: "5px" }}>
+              <div style={{ background: statusCol, borderRadius: "3px", height: "5px", width: `${pct}%`, transition: "width 0.4s" }} />
             </div>
           </div>
         );
       })}
 
-      {error && <div style={{ fontSize: "10px", color: "#ef4444", margin: "6px 0" }}>⚠ {error}</div>}
+      {/* Extras */}
+      <div style={{ marginTop: "12px" }}>
+        <button onClick={() => setShowExtras(s => !s)} style={{
+          width: "100%", padding: "8px", background: "transparent",
+          border: `1px dashed ${showExtras ? color + "50" : "#1e293b"}`, borderRadius: "7px",
+          color: showExtras ? color : "#475569", fontSize: "10px", cursor: "pointer",
+          fontFamily: "'Courier New', monospace", letterSpacing: "1px",
+        }}>
+          {showExtras ? "▲" : "+"} EXTRAS {extraEntries.length > 0 ? `(${extraEntries.length})` : "— wine, crisps, anything off-plan"}
+        </button>
 
-      {/* Logged meals */}
-      {photoLog.length > 0 && (
-        <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "6px" }}>
-          {photoLog.map((entry, i) => (
-            <div key={i} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid #1e293b", borderRadius: "8px", padding: "8px 10px" }}>
-              <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-                {entry.preview && <img src={entry.preview} alt="" style={{ width: "52px", height: "52px", borderRadius: "5px", objectFit: "cover", flexShrink: 0 }} />}
+        {showExtras && (
+          <div style={{ marginTop: "8px" }}>
+            {extraEntries.map((e, i) => (
+              <div key={i} style={{ display: "flex", gap: "8px", alignItems: "center", padding: "6px 8px", background: "rgba(255,255,255,0.02)", border: "1px solid #1e293b", borderRadius: "6px", marginBottom: "4px" }}>
+                {e.preview && <img src={e.preview} alt="" style={{ width: "32px", height: "32px", borderRadius: "4px", objectFit: "cover", flexShrink: 0 }} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "9px", color, letterSpacing: "1px" }}>{entry.meal.toUpperCase()}</span>
-                    <button onClick={() => removeEntry(entry.meal)} style={{ background: "transparent", border: "none", color: "#334155", cursor: "pointer", fontSize: "12px", padding: "0" }}>✕</button>
-                  </div>
-                  <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "2px", lineHeight: 1.4 }}>{entry.description}</div>
-                  <div style={{ display: "flex", gap: "8px", marginTop: "5px", flexWrap: "wrap" }}>
-                    <span style={{ fontSize: "9px", color: "#4ade80" }}>{entry.kcal} kcal</span>
-                    <span style={{ fontSize: "9px", color: "#60a5fa" }}>P:{entry.protein}g</span>
-                    <span style={{ fontSize: "9px", color: "#facc15" }}>C:{entry.carbs}g</span>
-                    <span style={{ fontSize: "9px", color: "#f97316" }}>F:{entry.fat}g</span>
-                    <span style={{ fontSize: "9px", color: confColor(entry.confidence) }}>~{entry.confidence}</span>
-                  </div>
-                  {entry.notes && <div style={{ fontSize: "9px", color: "#334155", marginTop: "3px" }}>{entry.notes}</div>}
+                  <div style={{ fontSize: "10px", color: "#94a3b8" }}>{e.input || e.description}</div>
+                  <div style={{ fontSize: "9px", color: "#475569" }}>{e.kcal} kcal · P:{e.protein}g C:{e.carbs}g F:{e.fat}g</div>
                 </div>
+                <button onClick={() => onSave(photoLog.filter((_, j) => photoLog.indexOf(e) !== j))} style={{ background: "transparent", border: "none", color: "#334155", cursor: "pointer", fontSize: "12px" }}>✕</button>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
 
-      {/* Log a meal photo */}
-      <div style={{ marginTop: "10px" }}>
-        <div style={{ fontSize: "9px", color: "#475569", marginBottom: "6px" }}>Log a meal photo:</div>
-        <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
-          {["Breakfast","Lunch","Dinner","Snack","Pre-run","Evening"].map(mealName => {
-            const logged = photoLog.find(e => e.meal === mealName);
-            const isAnalysing = analysing === mealName;
-            return (
-              <label key={mealName} style={{
-                padding: "5px 10px", border: `1px solid \${logged ? color + "60" : "#1e293b"}`,
-                borderRadius: "6px", background: logged ? `\${color}12` : "transparent",
-                color: isAnalysing ? "#475569" : logged ? color : "#475569",
-                fontSize: "9px", cursor: isAnalysing ? "default" : "pointer",
-                fontFamily: "'Courier New', monospace", display: "flex", alignItems: "center", gap: "4px",
-              }}>
-                <input type="file" accept="image/*" capture="environment" style={{ display: "none" }}
-                  onChange={e => { if (e.target.files[0]) analysePhoto(e.target.files[0], mealName); e.target.value = ""; }}
-                  disabled={isAnalysing}
-                />
-                {isAnalysing ? "…" : logged ? "✓ " : "📷 "}{mealName}
+            <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+              <input value={extraInput} onChange={e => setExtraInput(e.target.value)} onClick={e => e.stopPropagation()}
+                placeholder="e.g. glass of wine, packet of crisps"
+                style={{ flex: 1, padding: "8px 10px", background: "rgba(255,255,255,0.04)", border: "1px solid #1e293b", borderRadius: "6px", color: "#e2e8f0", fontSize: "11px", fontFamily: "'Courier New', monospace", outline: "none" }}
+              />
+              <button onClick={addExtra} disabled={extraLoading || !extraInput.trim()} style={{
+                padding: "8px 12px", background: "rgba(74,222,128,0.1)", border: "1px solid #4ade8060",
+                borderRadius: "6px", color: "#4ade80", fontSize: "11px", cursor: "pointer", fontFamily: "'Courier New', monospace",
+              }}>{extraLoading ? "…" : "+"}</button>
+              <label style={{ padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #1e293b", borderRadius: "6px", color: "#475569", fontSize: "14px", cursor: "pointer" }}>
+                <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => { if (e.target.files[0]) addExtraPhoto(e.target.files[0]); e.target.value = ""; }} disabled={extraLoading} />
+                📷
               </label>
-            );
-          })}
-        </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -712,22 +802,37 @@ function MacroPanel({ macroDay, fueling, km, phase, recipes, loadingRecipes, rec
           const mealId = meal.meal || meal.name;
           const isKept = kept.has(mealId);
           const isSwapping = swappingMeal === mealId;
+          const mealLogEntry = (photoLog || []).find(e => e.meal === mealId) || null;
           return recipes ? (
             <RecipeCard key={i} recipe={meal} color={color} mealLabel={meal.meal}
               onSwap={(userPrompt) => onSwapMeal && onSwapMeal(mealId, { remP, remC, remF, count: freeMeals.length }, userPrompt)}
-              swapping={isSwapping} kept={isKept} onToggleKeep={() => toggleKeep(mealId)} />
+              swapping={isSwapping} kept={isKept} onToggleKeep={() => toggleKeep(mealId)}
+              logEntry={mealLogEntry}
+              onLog={(entry) => {
+                const updated = entry
+                  ? [...(photoLog || []).filter(e => e.meal !== mealId), entry]
+                  : (photoLog || []).filter(e => e.meal !== mealId);
+                onSavePhotoLog && onSavePhotoLog(updated);
+              }} />
           ) : (
             <StaticMealCard key={i} meal={meal} color={color}
               onSwap={(userPrompt) => onSwapMeal && onSwapMeal(mealId, { remP, remC, remF, count: freeMeals.length }, userPrompt)}
-              swapping={isSwapping} kept={isKept} onToggleKeep={() => toggleKeep(mealId)} />
+              swapping={isSwapping} kept={isKept} onToggleKeep={() => toggleKeep(mealId)}
+              logEntry={mealLogEntry}
+              onLog={(entry) => {
+                const updated = entry
+                  ? [...(photoLog || []).filter(e => e.meal !== mealId), entry]
+                  : (photoLog || []).filter(e => e.meal !== mealId);
+                onSavePhotoLog && onSavePhotoLog(updated);
+              }} />
           );
         })}
       </div>
 
       {fueling && <FuelingPanel fueling={fueling} />}
 
-      {/* Photo Logger */}
-      <PhotoLogger
+      {/* Day Logger — actual vs target + extras */}
+      <DayLogger
         photoLog={photoLog || []}
         onSave={onSavePhotoLog || (() => {})}
         targets={{ kcal: dyn.kcal, protein: dyn.protein, carbs: dyn.carbs, fat: dyn.fat }}
