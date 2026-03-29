@@ -83,7 +83,24 @@ const macroData = {
 };
 
 
-// Precision Hydration fueling plans — heavy sweater
+// Scale static meal macros proportionally to match dynamic day targets
+function scaleMeals(meals, targetP, targetC, targetF) {
+  const totalP = meals.reduce((s, m) => s + m.p, 0);
+  const totalC = meals.reduce((s, m) => s + m.c, 0);
+  const totalF = meals.reduce((s, m) => s + m.f, 0);
+  if (!totalP || !totalC || !totalF) return meals;
+  const scaleP = targetP / totalP;
+  const scaleC = targetC / totalC;
+  const scaleF = targetF / totalF;
+  return meals.map(m => ({
+    ...m,
+    p: Math.round(m.p * scaleP),
+    c: Math.round(m.c * scaleC),
+    f: Math.round(m.f * scaleF),
+  }));
+}
+
+
 const fuelingPlans = {
   easy_long: {
     color: "#38bdf8", label: "Light Fueling",
@@ -384,7 +401,7 @@ function MacroPanel({ macroDay, fueling, km, phase, recipes, loadingRecipes, rec
       <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "2px", marginBottom: "6px" }}>MEALS</div>
       {/* Meals — static until recipes generated, then replaced inline */}
       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-        {(recipes ? recipes.meals : m.meals).map((meal, i) => {
+        {(recipes ? recipes.meals : scaleMeals(m.meals, dyn.protein, dyn.carbs, dyn.fat)).map((meal, i) => {
           const mealName = meal.meal;
           const isSwapping = swappingMeal === mealName;
           return recipes ? (
