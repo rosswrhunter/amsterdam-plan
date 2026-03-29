@@ -51,7 +51,7 @@ export async function dbGetAll() {
 
 // Migrate existing localStorage data to Supabase (run once)
 export async function migrateFromLocalStorage() {
-  const keys = ['ams_overrides', 'ams_photolog', 'ams_log', 'ams_memory', 'ams_weights'];
+  const keys = ['ams_overrides', 'ams_photolog', 'ams_log', 'ams_memory', 'ams_weights', 'ams_recipes', 'ams_kept'];
   const migrated = localStorage.getItem('ams_migrated');
   if (migrated) return;
 

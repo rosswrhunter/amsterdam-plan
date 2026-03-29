@@ -705,11 +705,11 @@ function DayLogger({ photoLog, onSave, targets, color }) {
   );
 }
 
-function MacroPanel({ macroDay, fueling, km, phase, recipes, loadingRecipes, recipeError, onGenerateRecipes, onSwapMeal, swappingMeal, photoLog, onSavePhotoLog }) {
+function MacroPanel({ macroDay, fueling, km, phase, recipes, loadingRecipes, recipeError, onGenerateRecipes, onSwapMeal, swappingMeal, photoLog, onSavePhotoLog, keptExternal, onKeptChange }) {
   const m = macroData[macroDay] || macroData["hard"];
   const dyn = calcDayMacros(macroDay, km, phase);
   const color = m.color;
-  const [kept, setKept] = useState(new Set()); // set of kept meal names
+  const kept = keptExternal || new Set();
 
   // Get current meal list (recipes or scaled static)
   const baseMeals = recipes ? recipes.meals : scaleMeals(m.meals, dyn.protein, dyn.carbs, dyn.fat);
@@ -750,11 +750,9 @@ function MacroPanel({ macroDay, fueling, km, phase, recipes, loadingRecipes, rec
   });
 
   function toggleKeep(mealId) {
-    setKept(prev => {
-      const next = new Set(prev);
-      if (next.has(mealId)) next.delete(mealId); else next.add(mealId);
-      return next;
-    });
+    const next = new Set(kept);
+    if (next.has(mealId)) next.delete(mealId); else next.add(mealId);
+    onKeptChange && onKeptChange(next);
   }
 
   return (
@@ -1040,9 +1038,40 @@ export default function DayByDayPlan() {
   const allDays = generateAllDays();
   const [filter, setFilter] = useState("ALL");
   const [expanded, setExpanded] = useState(null);
-  const [dayRecipes, setDayRecipes] = useState({});
+  const [dayRecipes, setDayRecipes] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("ams_recipes") || "{}"); } catch { return {}; }
+  });
+  const [dayKept, setDayKept] = useState(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem("ams_kept") || "{}");
+      // Convert arrays back to Sets
+      return Object.fromEntries(Object.entries(raw).map(([k,v]) => [k, new Set(v)]));
+    } catch { return {}; }
+  });
   const [dayRecipeLoading, setDayRecipeLoading] = useState({});
   const [dayRecipeError, setDayRecipeError] = useState({});
+
+  // Load from Supabase on mount
+  useEffect(() => {
+    dbGet("ams_recipes").then(v => { if (v) setDayRecipes(v); });
+    dbGet("ams_kept").then(v => {
+      if (v) setDayKept(Object.fromEntries(Object.entries(v).map(([k,a]) => [k, new Set(a)])));
+    });
+  }, []);
+
+  function saveDayRecipes(updated) {
+    setDayRecipes(updated);
+    localStorage.setItem("ams_recipes", JSON.stringify(updated));
+    dbSet("ams_recipes", updated);
+  }
+
+  function saveDayKept(updated) {
+    setDayKept(updated);
+    // Convert Sets to arrays for serialisation
+    const serialisable = Object.fromEntries(Object.entries(updated).map(([k,s]) => [k, [...s]]));
+    localStorage.setItem("ams_kept", JSON.stringify(serialisable));
+    dbSet("ams_kept", serialisable);
+  }
   const [daySwappingMeal, setDaySwappingMeal] = useState({}); // { dayKey: mealName }
   const [dayPhotoLog, setDayPhotoLog] = useState(() => {
     try { return JSON.parse(localStorage.getItem("ams_photolog") || "{}"); } catch { return {}; }
@@ -1353,18 +1382,20 @@ export default function DayByDayPlan() {
                         recipes={dayRecipes[dayKey] || null}
                         loadingRecipes={!!dayRecipeLoading[dayKey]}
                         recipeError={dayRecipeError[dayKey] || null}
+                        keptExternal={dayKept[dayKey] || null}
+                        onKeptChange={(newKept) => saveDayKept({ ...dayKept, [dayKey]: newKept })}
                         photoLog={dayPhotoLog[dayKey] || []}
                         onSavePhotoLog={(entries) => savePhotoLog(dayKey, entries)}
                         onGenerateRecipes={async () => {
                           if (dayRecipes[dayKey]) {
-                            setDayRecipes(p => ({ ...p, [dayKey]: null }));
+                            saveDayRecipes({ ...dayRecipes, [dayKey]: null });
                             return;
                           }
                           setDayRecipeLoading(p => ({ ...p, [dayKey]: true }));
                           setDayRecipeError(p => ({ ...p, [dayKey]: null }));
                           try {
                             const r = await generateDayRecipes(day.macroDay);
-                            setDayRecipes(p => ({ ...p, [dayKey]: r }));
+                            saveDayRecipes({ ...dayRecipes, [dayKey]: r });
                           } catch (err) {
                             setDayRecipeError(p => ({ ...p, [dayKey]: err.message || "Failed to generate. Try again." }));
                           }
@@ -1412,18 +1443,15 @@ export default function DayByDayPlan() {
                             }
                             // Force meal field to exactly match mealName so lookup always works
                             newMeal.meal = mealName;
-                            setDayRecipes(p => {
-                              const existing = p[dayKey];
-                              const baseMeals = existing ? existing.meals : (macroData[day.macroDay] || macroData["hard"]).meals.map(m => ({
-                                meal: m.meal, name: m.food, time: "—",
-                                macros: { kcal: (m.p*4 + m.c*4 + m.f*9), protein: m.p, carbs: m.c, fat: m.f },
-                                ingredients: [m.food], method: ["Prepare as described."]
-                              }));
-                              // Match by meal name case-insensitively
-                              return { ...p, [dayKey]: { meals: baseMeals.map(m =>
-                                (m.meal || "").toLowerCase() === mealName.toLowerCase() ? newMeal : m
-                              )}};
-                            });
+                            const existing = dayRecipes[dayKey];
+                            const baseMeals = existing ? existing.meals : (macroData[day.macroDay] || macroData["hard"]).meals.map(m => ({
+                              meal: m.meal, name: m.food, time: "—",
+                              macros: { kcal: (m.p*4 + m.c*4 + m.f*9), protein: m.p, carbs: m.c, fat: m.f },
+                              ingredients: [m.food], method: ["Prepare as described."]
+                            }));
+                            saveDayRecipes({ ...dayRecipes, [dayKey]: { meals: baseMeals.map(m =>
+                              (m.meal || "").toLowerCase() === mealName.toLowerCase() ? newMeal : m
+                            )}});
                           } catch(err) {
                             setDayRecipeError(p => ({ ...p, [dayKey]: err.message || "Swap failed." }));
                           }
