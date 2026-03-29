@@ -31,8 +31,8 @@ export default function WorkoutLog({ log, onAdd, onDelete, allDays }) {
   const [manual, setManual] = useState({ planned: "", actual: "", notes: "", felt: "good", date: new Date().toISOString().split("T")[0] });
 
   async function handleScreenshot(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
     e.target.value = "";
 
     const apiKey = localStorage.getItem("oai_key");
@@ -41,25 +41,21 @@ export default function WorkoutLog({ log, onAdd, onDelete, allDays }) {
       return;
     }
 
-    // Read image as base64
-    const imageB64 = await new Promise(res => {
+    // Read all images as base64
+    const images = await Promise.all(files.map(file => new Promise(res => {
       const reader = new FileReader();
-      reader.onload = ev => res(ev.target.result.split(",")[1]);
+      reader.onload = ev => res({ b64: ev.target.result.split(",")[1], preview: ev.target.result });
       reader.readAsDataURL(file);
-    });
+    })));
 
     setAnalysing(true);
     setError(null);
     setPending(null);
 
-    // Build plan summary for context
-    const planSummary = Object.entries(planLookup).slice(0, 220).map(([date, day]) =>
-      `${date}: ${day.type} — ${day.detail}`
-    ).join("\n");
+    const prompt = `You are analysing ${images.length > 1 ? `${images.length} Garmin Connect screenshots` : "a Garmin Connect activity screenshot"} for Ross Hunter's marathon training log.
+${images.length > 1 ? "Screenshots may show Overview, Stats, Laps, Charts or other tabs of the same activity — combine all visible data." : ""}
 
-    const prompt = `You are analysing a Garmin Connect activity screenshot for Ross Hunter's marathon training log.
-
-Extract ALL available data from this screenshot and return ONLY a valid JSON object with these fields:
+Extract ALL available data and return ONLY a valid JSON object with these fields:
 {
   "date": "YYYY-MM-DD",
   "activityType": "string (e.g. Running, Cycling, etc)",
@@ -74,14 +70,17 @@ Extract ALL available data from this screenshot and return ONLY a valid JSON obj
   "vo2max": "number or null",
   "trainingEffect": "string or null",
   "title": "activity title if shown",
-  "notes": "any other notable data visible e.g. splits, zones, training load"
+  "notes": "any other notable data visible e.g. splits, zones, training load, HRV, recovery"
 }
 
 If any field is not visible, use null. Date is critical — extract it precisely.
-
 Return ONLY the JSON object, no other text.`;
 
     try {
+      const imageContent = images.map(img => ({
+        type: "image_url", image_url: { url: `data:image/jpeg;base64,${img.b64}`, detail: "high" }
+      }));
+
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
@@ -90,10 +89,7 @@ Return ONLY the JSON object, no other text.`;
           max_tokens: 500,
           messages: [{
             role: "user",
-            content: [
-              { type: "text", text: prompt },
-              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageB64}`, detail: "high" } }
-            ]
+            content: [{ type: "text", text: prompt }, ...imageContent]
           }]
         })
       });
@@ -184,7 +180,7 @@ Write 2-3 sentences: did he execute the session correctly for its type? What doe
       notes: pending.notes,
       analysis: pending.analysis,
       felt: pending.felt,
-      image: pending.image,
+      images: pending.images,
     });
     setPending(null);
   }
@@ -230,11 +226,11 @@ Write 2-3 sentences: did he execute the session correctly for its type? What doe
             Upload Garmin Screenshot
           </div>
           <div style={{ fontSize: "10px", color: "#475569", lineHeight: 1.5 }}>
-            AI reads your activity, matches it to your plan,<br/>analyses performance and logs everything automatically
+            Upload 1 or more screenshots (Overview, Stats, Laps…)<br/>AI combines them, matches to your plan and logs automatically
           </div>
         </div>
       )}
-      <input ref={fileRef} type="file" accept="image/*" onChange={handleScreenshot} style={{ display: "none" }} />
+      <input ref={fileRef} type="file" accept="image/*" multiple onChange={handleScreenshot} style={{ display: "none" }} />
 
       {/* Analysing state */}
       {analysing && (
@@ -260,8 +256,10 @@ Write 2-3 sentences: did he execute the session correctly for its type? What doe
           </div>
 
           {/* Screenshot thumbnail */}
-          {pending.image && (
-            <img src={pending.image} alt="" style={{ width: "100%", borderRadius: "6px", marginBottom: "10px", maxHeight: "180px", objectFit: "cover", objectPosition: "top" }} />
+          {pending.images?.length > 0 && (
+            <div style={{ display: "flex", gap: "6px", marginBottom: "10px", overflowX: "auto" }}>
+              {pending.images.map((src, i) => <img key={i} src={src} alt="" style={{ height: "80px", borderRadius: "4px", flexShrink: 0 }} />)}
+            </div>
           )}
 
           {/* Planned vs Actual */}
