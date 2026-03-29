@@ -73,7 +73,8 @@ Extract ALL available data and return ONLY a valid JSON object with these fields
   "notes": "any other notable data visible e.g. splits, zones, training load, HRV, recovery"
 }
 
-If any field is not visible, use null. Date is critical — extract it precisely.
+If any field is not visible, use null. Date is critical — extract it precisely. The current year is 2026, so if the screenshot shows a date without a year (e.g. "28 Mar"), assume 2026.
+
 Return ONLY the JSON object, no other text.`;
 
     try {
