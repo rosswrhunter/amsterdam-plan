@@ -104,9 +104,12 @@ Return ONLY the JSON object, no other text.`;
       const raw = data.choices[0].message.content.replace(/```json|```/g, "").trim();
       const extracted = JSON.parse(raw);
 
-      // Match against plan
-      const planned = extracted.date ? planLookup[extracted.date] : null;
-      const plannedText = planned ? `${planned.type} — ${planned.detail}` : "No planned session found for this date";
+      // Match against plan — default to today if AI couldn't extract a clear date
+      const today = new Date().toISOString().split("T")[0];
+      const sessionDate = extracted.date || today;
+      const planned = planLookup[sessionDate];
+      if (!extracted.date) extracted.date = today;
+      const plannedText = planned ? `${planned.type} — ${planned.detail} (${phase} phase)` : "No planned session found for this date (may be rest day or outside plan)";
 
       // Build actual summary
       const parts = [];
@@ -125,12 +128,23 @@ Return ONLY the JSON object, no other text.`;
       if (extracted.notes) noteParts.push(extracted.notes);
 
       // Now get AI to compare planned vs actual
-      const analysisPrompt = `Ross Hunter is training for Amsterdam Marathon (goal sub-4:00, 5:41/km pace). 
+      const sessionType = planned?.type || "unplanned";
+      const phase = planned?.phase?.name || "BASE";
+      const analysisPrompt = `Ross Hunter is training for Amsterdam Marathon (18 Oct 2026, goal sub-4:00). Current phase: ${phase}.
+
 Planned session: ${plannedText}
 Actual session: ${actualText}
 Extra data: ${noteParts.join(", ")}
 
-Write 2-3 sentences: did he hit the target? What does the data suggest about his form/fitness? Any specific recommendation for his next session? Be direct and specific, no fluff.`;
+IMPORTANT CONTEXT — judge the run against the PLANNED session type, not his race pace:
+- Easy/Zone 2 runs: target 6:20–6:45/km, HR <155bpm. Slower pace is CORRECT.
+- Tempo runs: target 5:25–5:30/km, HR ~178bpm
+- Intervals: target 5:00–5:10/km, HR ~182bpm
+- Marathon pace: target 5:41/km, HR ~170bpm
+- Long runs: target 6:15–6:30/km, HR <160bpm
+- 5:41/km is his RACE pace — do NOT use this to judge easy runs
+
+Write 2-3 sentences: did he execute the session correctly for its type? What does HR/pace data suggest? One specific recommendation. Be direct, no fluff, no hedging.`;
 
       const analysisRes = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
