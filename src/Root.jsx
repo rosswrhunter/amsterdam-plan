@@ -50,10 +50,11 @@ export default function Root() {
         background: "#0a0a0f",
         borderBottom: "1px solid #1e293b",
         display: "flex",
+        height: "52px",
       }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
-            flex: 1, padding: "12px 4px 10px",
+            flex: 1, padding: "8px 4px 6px",
             border: "none",
             borderBottom: tab === t.id ? "2px solid #4ade80" : "2px solid transparent",
             background: "transparent",
@@ -62,6 +63,7 @@ export default function Root() {
             fontSize: "9px", letterSpacing: "1.5px",
             display: "flex", flexDirection: "column", alignItems: "center", gap: "2px",
             transition: "color 0.15s",
+            height: "52px", boxSizing: "border-box",
           }}>
             <span style={{ fontSize: "16px" }}>{t.icon}</span>
             {t.label}

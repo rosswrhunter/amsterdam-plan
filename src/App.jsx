@@ -449,21 +449,29 @@ export default function DayByDayPlan() {
   return (
     <div style={{ background: "#0a0a0f", minHeight: "100vh", fontFamily: "'Courier New', monospace", color: "#e2e8f0" }}>
 
-      {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)", borderBottom: "1px solid #1e293b", padding: "22px 18px 14px", position: "sticky", top: 0, zIndex: 10 }}>
-        <div style={{ fontSize: "10px", letterSpacing: "4px", color: "#4ade80", marginBottom: "4px" }}>AMSTERDAM MARATHON 2026</div>
-        <div style={{ fontSize: "20px", fontWeight: "bold", color: "#f8fafc", letterSpacing: "-0.5px" }}>Day by Day Plan</div>
-        <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>30 Mar → 18 Oct · {allDays.length} days · Tap any day for nutrition</div>
-        <div style={{ display: "flex", gap: "6px", marginTop: "10px", flexWrap: "wrap" }}>
+      {/* Sticky sub-header — sits below the nav bar (nav = ~52px) */}
+      <div style={{
+        background: "#0a0a0f",
+        borderBottom: "1px solid #1e293b",
+        padding: "10px 14px 8px",
+        position: "sticky",
+        top: "52px",
+        zIndex: 10,
+      }}>
+        <div style={{ fontSize: "10px", color: "#475569", letterSpacing: "1px", marginBottom: "8px" }}>
+          30 Mar → 18 Oct · {allDays.length} days · Tap any day for nutrition
+        </div>
+        <div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "2px", WebkitOverflowScrolling: "touch" }}>
           {["ALL","BASE","BUILD","PEAK","TAPER"].map(f => {
             const ph = phases.find(p => p.name === f);
             const col = ph ? ph.color : "#94a3b8";
             return (
               <button key={f} onClick={() => setFilter(f)} style={{
-                padding: "5px 11px", border: `1px solid ${filter === f ? col : "#1e293b"}`,
+                padding: "5px 12px", border: `1px solid ${filter === f ? col : "#1e293b"}`,
                 borderRadius: "6px", background: filter === f ? `${col}20` : "transparent",
                 color: filter === f ? col : "#475569", cursor: "pointer",
                 fontSize: "10px", letterSpacing: "2px", fontFamily: "'Courier New', monospace",
+                flexShrink: 0, whiteSpace: "nowrap",
               }}>{f}</button>
             );
           })}
