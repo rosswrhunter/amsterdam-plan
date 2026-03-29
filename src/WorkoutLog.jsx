@@ -105,6 +105,8 @@ Return ONLY the JSON object, no other text.`;
       const sessionDate = extracted.date || today;
       const planned = planLookup[sessionDate];
       if (!extracted.date) extracted.date = today;
+      const sessionType = planned?.type || "unplanned";
+      const phase = planned?.phase?.name || "BASE";
       const plannedText = planned ? `${planned.type} — ${planned.detail} (${phase} phase)` : "No planned session found for this date (may be rest day or outside plan)";
 
       // Build actual summary
@@ -124,8 +126,6 @@ Return ONLY the JSON object, no other text.`;
       if (extracted.notes) noteParts.push(extracted.notes);
 
       // Now get AI to compare planned vs actual
-      const sessionType = planned?.type || "unplanned";
-      const phase = planned?.phase?.name || "BASE";
       const analysisPrompt = `Ross Hunter is training for Amsterdam Marathon (18 Oct 2026, goal sub-4:00). Current phase: ${phase}.
 
 Planned session: ${plannedText}
