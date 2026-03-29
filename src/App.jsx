@@ -99,11 +99,11 @@ const fuelingPlans = {
       { time: "Night before", action: "PH 1500 in 500ml water + carb-heavy dinner" },
       { time: "Morning", action: "Oats 100g + banana + 2 eggs. Eat 90 min before start." },
       { time: "15 min pre", action: "500ml PH 1500 tablet" },
-      { time: "45 min in", action: "First gel — aim for 30g carbs (Maurten 100 or SiS Beta Fuel)" },
-      { time: "Every 45 min after", action: "Gel + 200–300ml PH 1500 from bottle" },
+      { time: "45 min in", action: "First PH Carb 30 gel. Small, easy to take, won't spike your stomach." },
+      { time: "Every 45 min after", action: "PH Carb 30 gel + 200–300ml PH 1500. Steady and consistent." },
       { time: "Post-run", action: "PH 1500 in 500ml immediately + recovery meal within 45 min" },
     ],
-    note: "Carry at least 750ml–1L. As a heavy sweater, plan a refill or a loop route past home."
+    note: "Carry at least 750ml–1L. PH Carb 30 gels are ideal for base — light on the stomach as your gut adapts. Plan a refill route.",
   },
   long_build: {
     color: "#a78bfa", label: "Long Run Fueling (Build Phase)",
@@ -111,12 +111,12 @@ const fuelingPlans = {
       { time: "Night before", action: "PH 1500 + carb load dinner (pasta/rice). 500ml water." },
       { time: "Morning", action: "Oats 120g + banana + honey + 2 eggs. 90 min before start." },
       { time: "15 min pre", action: "500ml PH 1500 + small banana" },
-      { time: "30 min in", action: "First gel. Start early — don't wait until you feel it." },
-      { time: "Every 40 min", action: "Gel (30–40g carbs) + 250ml PH 1500. Alternate with plain water." },
+      { time: "30 min in", action: "First PH Carb 30 gel. Start early — don't wait until you feel it." },
+      { time: "Every 40 min", action: "PH Carb 30 gel + 250ml PH 1500. Alternate bottles with plain water." },
       { time: "Last 5km pace section", action: "No gel — just water. Focus on running the pace." },
       { time: "Post-run", action: "PH 1500 + chocolate milk or protein shake + carbs within 30 min" },
     ],
-    note: "You need 3–4 gels for 26–30km. Practice your exact race-day fueling strategy in these sessions."
+    note: "You need 3–4 PH Carb 30 gels for 26–30km. Start introducing PH Carb 90 in later Build weeks to test your gut tolerance."
   },
   long_peak: {
     color: "#a78bfa", label: "Long Run Fueling (Peak Phase)",
@@ -124,12 +124,12 @@ const fuelingPlans = {
       { time: "2 days before", action: "Increase carb intake. PH 1000 daily." },
       { time: "Night before", action: "Full carb load. PH 1500 in 750ml water before bed." },
       { time: "Morning", action: "Oats 150g + 2 bananas + honey. 90–120 min before." },
-      { time: "15 min pre", action: "750ml PH 1500 + caffeine gel if using (only if already tested!)" },
-      { time: "Every 35–40 min", action: "Gel (40g carbs) + 200–250ml PH 1500" },
+      { time: "15 min pre", action: "750ml PH 1500 + PH Caffeine Gel (100mg) — only if you've tested it before" },
+      { time: "Every 35–40 min", action: "Alternate: PH Carb 30 (easy on stomach) and PH Carb 90 (big carb hit at km 20+). Chase with 200ml PH 1500." },
       { time: "Marathon pace section", action: "Gel at start of MP section. Run your race-day rhythm." },
       { time: "Post-run", action: "PH 1500 immediately + full recovery meal within 45 min" },
     ],
-    note: "These are your race rehearsals. Use EXACTLY what you will use on race day. Zero experimenting."
+    note: "Race rehearsal. Use PH Carb 30 early, introduce PH Carb 90 from the halfway point, test PH Caffeine Gel at the end. Zero new products on race day."
   },
   marathon_pace: {
     color: "#f97316", label: "Marathon Pace Run Fueling",
@@ -137,8 +137,8 @@ const fuelingPlans = {
       { time: "Night before", action: "PH 1500 in 500ml + pasta or rice dinner" },
       { time: "Morning", action: "Oats 100g + banana. 90 min before." },
       { time: "15 min pre", action: "500ml PH 1500" },
-      { time: "Before pace section", action: "Take a gel just before switching to 5:41/km" },
-      { time: "During pace section", action: "250ml PH 1500 every 45 min. Practice sipping at pace." },
+      { time: "Before pace section", action: "PH Carb 30 gel just before switching to 5:41/km" },
+      { time: "During pace section", action: "PH Carb 30 every 45 min + 250ml PH 1500. Practice the exact race routine." },
       { time: "Post", action: "PH 1500 + protein meal" },
     ],
     note: "Practice drinking at marathon pace now — it feels different. Don\'t leave this skill to race day."
@@ -150,13 +150,13 @@ const fuelingPlans = {
       { time: "Night before", action: "PH 1500 in 750ml water + big pasta dinner. Early bed." },
       { time: "Race morning", action: "Oats 150g + 2 bananas + honey. 3 hours before gun." },
       { time: "90 min pre", action: "500ml PH 1500 tablet" },
-      { time: "15 min pre", action: "Caffeine gel (100mg) + 200ml water" },
-      { time: "km 8", action: "First gel. Do not wait until you need it." },
-      { time: "Every 8km after", action: "Gel + water at aid station. Carry PH tabs in pocket." },
-      { time: "km 30", action: "Caffeine gel if you have one. This is where races are won." },
+      { time: "15 min pre", action: "PH Caffeine Gel (100mg caffeine) + 200ml water" },
+      { time: "km 8", action: "PH Carb 30 gel. Do not wait until you need it." },
+      { time: "Every 8km after", action: "Alternate PH Carb 30 and PH Carb 90. Chase every gel with water at aid stations. Carry PH 1500 tabs in pocket." },
+      { time: "km 30", action: "PH Caffeine Gel if you have one left. This is where races are won." },
       { time: "Finish", action: "PH 1500 immediately. Sit. Eat within 30 min." },
     ],
-    note: "Nothing new on race day. Every product you use must have been tested in your Peak long runs."
+    note: "Nothing new on race day. PH Carb 30 for early km, PH Carb 90 from km 20+, PH Caffeine Gel at km 30. All must be tested in Peak training."
   },
 };
 
