@@ -1119,8 +1119,11 @@ export default function DayByDayPlan() {
   }
 
   function resetWeek(weekDays) {
-    const updated = { ...overrides };
-    weekDays.forEach(d => { delete updated[dateKey(d.date)]; });
+    const weekKeys = new Set(weekDays.map(d => dateKey(d.date)));
+    const updated = {};
+    Object.entries(overrides).forEach(([k, v]) => {
+      if (!weekKeys.has(k)) updated[k] = v;
+    });
     setOverrides(updated);
     localStorage.setItem("ams_overrides", JSON.stringify(updated));
   }
@@ -1156,11 +1159,13 @@ export default function DayByDayPlan() {
 
   // Group allDays into weeks for holiday mode
   function getWeekDays(anyDay) {
-    const dk = dateKey(anyDay.date);
     const d = new Date(anyDay.date);
-    const mon = new Date(d); mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-    return allDays.filter(x => x.date >= mon && x.date <= sun);
+    const mon = new Date(d); mon.setDate(d.getDate() - ((d.getDay() + 6) % 7)); mon.setHours(0,0,0,0);
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59,999);
+    return allDays.filter(x => {
+      const xd = new Date(x.date); xd.setHours(12,0,0,0);
+      return xd >= mon && xd <= sun;
+    });
   }
 
   return (
