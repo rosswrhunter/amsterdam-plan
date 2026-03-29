@@ -891,15 +891,35 @@ export default function DayByDayPlan() {
                             const mealC = budget ? Math.round(budget.remC / Math.max(1, budget.count)) : Math.round(macroInfo.carbs   / 5);
                             const mealF = budget ? Math.round(budget.remF / Math.max(1, budget.count)) : Math.round(macroInfo.fat     / 5);
                             const cuisineNote = userPrompt ? `User request: "${userPrompt}". Build the recipe around this specifically.` : "Any cuisine, keep it interesting and varied.";
-                            const prompt = `You are a sports nutritionist creating a recipe for Ross Hunter (marathon runner, 90kg, training for Amsterdam Marathon). Meal: ${mealName}. Day type: ${macroInfo.label}. Macro target for this meal: P:${mealP}g C:${mealC}g F:${mealF}g. No cottage cheese, no feta. ${cuisineNote} Exact quantities. Practical to make. Hit the macro targets closely. Respond ONLY as valid JSON: {"meal":"${mealName}","name":"...","time":"...","macros":{"kcal":0,"protein":0,"carbs":0,"fat":0},"ingredients":["..."],"method":["..."]}`;
-                            const res = await fetch("https://api.openai.com/v1/chat/completions", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-                              body: JSON.stringify({ model: "gpt-4o", max_tokens: 1000, messages: [{ role: "user", content: prompt }] }),
-                            });
-                            const data = await res.json();
-                            const text = data.choices?.[0]?.message?.content || "";
-                            const newMeal = safeParseJSON(text);
+                            const prompt = `Generate a single meal recipe as JSON. No explanation, no markdown, no extra text — only the raw JSON object.\n\nMeal slot: ${mealName}\nCuisine/style: ${userPrompt || "varied, interesting"}\nFor: Ross Hunter, marathon runner, 90kg\nDay type: ${macroInfo.label}\nMacro target: P:${mealP}g C:${mealC}g F:${mealF}g\nAvoid: cottage cheese, feta, tuna\n\nReturn ONLY this JSON structure with no other text:\n{"meal":"${mealName}","name":"RECIPE NAME","time":"X min","macros":{"kcal":0,"protein":0,"carbs":0,"fat":0},"ingredients":["200g item","1 tbsp item"],"method":["Step 1","Step 2"]}`;
+                            
+                            async function callSwapAPI(msgs) {
+                              const r = await fetch("https://api.openai.com/v1/chat/completions", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+                                body: JSON.stringify({ model: "gpt-4o", max_tokens: 1000, messages: msgs }),
+                              });
+                              const d = await r.json();
+                              if (d.error) throw new Error(d.error.message);
+                              return d.choices?.[0]?.message?.content || "";
+                            }
+
+                            let text = await callSwapAPI([
+                              { role: "system", content: "You are a JSON API. You respond with only valid JSON objects, no markdown, no explanation." },
+                              { role: "user", content: prompt }
+                            ]);
+                            let newMeal;
+                            try {
+                              newMeal = safeParseJSON(text);
+                            } catch {
+                              // Retry with even stricter instruction
+                              text = await callSwapAPI([
+                                { role: "system", content: "You are a JSON API. Output ONLY a raw JSON object. No backticks, no markdown, no words before or after the JSON." },
+                                { role: "user", content: prompt },
+                                { role: "assistant", content: "{" },
+                              ]);
+                              newMeal = safeParseJSON("{" + text.replace(/^\s*\{/, ""));
+                            }
                             // Force meal field to exactly match mealName so lookup always works
                             newMeal.meal = mealName;
                             setDayRecipes(p => {
