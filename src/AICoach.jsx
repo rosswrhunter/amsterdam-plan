@@ -1,5 +1,27 @@
 import { useState, useRef, useEffect } from "react";
 
+// Build a lookup by date string
+function getDayByDate(allDays, date) {
+  const key = date.toISOString().split("T")[0];
+  return allDays?.find(d => d.date.toISOString().split("T")[0] === key) || null;
+}
+
+function formatDayContext(day, calcDayMacros, label) {
+  if (!day) return `${label}: outside plan range`;
+  const macros = calcDayMacros(day.macroDay, day.km);
+  const parts = [
+    `${label} (${day.date.toDateString()}):`,
+    `  Session: ${day.type} — ${day.detail}`,
+    `  Phase: ${day.phase.name}`,
+    `  Km: ${day.km || 0}km`,
+    `  Eat: ${macros.kcal} kcal | Protein: ${macros.protein}g | Carbs: ${macros.carbs}g | Fat: ${macros.fat}g`,
+    `  Est. burn: ~${macros.burn} kcal (run: ~${macros.runBurn} kcal)`,
+    `  Macro type: ${day.macroDay}`,
+  ];
+  if (day.fueling) parts.push(`  Fueling: ${day.fueling}`);
+  return parts.join("\n");
+}
+
 const PLAN_CONTEXT = `You are an expert marathon coach and sports nutritionist embedded in a training app. You are helping Ross Hunter, 39yo male, Amsterdam, train for Amsterdam Marathon 18 Oct 2026. Goal: sub-4:00 (5:41/km).
 
 KEY STATS: 90kg, 175cm, BMI 29.4, target 75-78kg. VO2 Max 43 (peaked 45.3 Nov 2025). Lactate threshold 5:36/km @ 184bpm. Best marathon: 4:37. Recently ran 85km ultra. TDEE ~2,923 kcal/day (Garmin). Heavy sweater. Uses Precision Hydration. Reformer Pilates Sundays. Prefers no Tue/Thu training.
@@ -18,7 +40,7 @@ FUELING (Precision Hydration): PH 1500 pre all hard sessions. PH Carb 30 gels ba
 
 Be concise, specific and direct. Reference Ross's actual data. If given Garmin screenshots, analyse vs plan and give actionable feedback.`;
 
-export default function AICoach({ memory, workoutLog }) {
+export default function AICoach({ memory, workoutLog, allDays, calcDayMacros }) {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("oai_key") || "");
   const [showKey, setShowKey] = useState(!localStorage.getItem("oai_key"));
   const [keyInput, setKeyInput] = useState("");
@@ -75,13 +97,32 @@ export default function AICoach({ memory, workoutLog }) {
     setImagePreview(null);
     setLoading(true);
 
+    // Build live daily context — today, yesterday, tomorrow, day after
+    const now = new Date(); now.setHours(0,0,0,0);
+    const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
+    const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
+    const dayAfter = new Date(now); dayAfter.setDate(dayAfter.getDate() + 2);
+
+    const todayDay = getDayByDate(allDays, now);
+    const tomorrowDay = getDayByDate(allDays, tomorrow);
+    const yesterdayDay = getDayByDate(allDays, yesterday);
+    const dayAfterDay = getDayByDate(allDays, dayAfter);
+
+    const liveCtx = allDays && calcDayMacros ? `\n\nLIVE PLAN CONTEXT (today is ${now.toDateString()}):
+${formatDayContext(yesterdayDay, calcDayMacros, "YESTERDAY")}
+${formatDayContext(todayDay, calcDayMacros, "TODAY")}
+${formatDayContext(tomorrowDay, calcDayMacros, "TOMORROW")}
+${formatDayContext(dayAfterDay, calcDayMacros, "DAY AFTER")}
+
+When asked about meals, shopping, fueling or nutrition for any of these days, use the exact macro targets above. When asked "what should I eat tomorrow" give specific meals that hit the carb/protein/fat/kcal targets for that day's session.` : "";
+
     const memCtx = memory ? `\n\nROSS'S NOTES:\n${memory}` : "";
     const logCtx = workoutLog?.length
       ? `\n\nRECENT WORKOUTS (planned → actual):\n${workoutLog.slice(-8).map(w => `${w.date}: ${w.planned} → ${w.actual}${w.notes ? ` (${w.notes})` : ""}`).join("\n")}`
       : "";
 
     const apiMsgs = [
-      { role: "system", content: PLAN_CONTEXT + memCtx + logCtx },
+      { role: "system", content: PLAN_CONTEXT + liveCtx + memCtx + logCtx },
       ...history.slice(1).map(m => {
         if (m.role === "user" && m.image) {
           return {

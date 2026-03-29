@@ -361,7 +361,7 @@ const macroColor = { hard: "#f97316", easy: "#60a5fa", active: "#4ade80", rest: 
 // At 90kg: ~90 kcal/km easy, ~100 kcal/km tempo/intervals (higher intensity)
 // Resting TDEE base: ~2200/day (excludes active calories)
 // Dog walks add ~300 kcal daily regardless
-function calcDayMacros(macroDay, km) {
+export function calcDayMacros(macroDay, km) {
   const base = 2200; // resting metabolic
   const walks = 300; // daily dog walks always
   const kcalPerKm = (macroDay === "hard") ? 100 : 90; // intensity factor
