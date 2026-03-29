@@ -1051,6 +1051,68 @@ export default function DayByDayPlan() {
     setDayPhotoLog(updated);
     localStorage.setItem("ams_photolog", JSON.stringify(updated));
   }
+
+  // Plan overrides — keyed by dateKey, stores custom activity or null (skip)
+  const [overrides, setOverrides] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("ams_overrides") || "{}"); } catch { return {}; }
+  });
+  function saveOverride(key, value) {
+    const updated = { ...overrides, [key]: value };
+    setOverrides(updated);
+    localStorage.setItem("ams_overrides", JSON.stringify(updated));
+  }
+  function clearOverride(key) {
+    const updated = { ...overrides };
+    delete updated[key];
+    setOverrides(updated);
+    localStorage.setItem("ams_overrides", JSON.stringify(updated));
+  }
+
+  // Edit mode
+  const [editMode, setEditMode] = useState(false);
+  const [swapSource, setSwapSource] = useState(null); // dayKey of first selected day for swap
+  const [holidayWeek, setHolidayWeek] = useState(null); // week start dateKey being modified
+
+  function dateKey(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  }
+
+  function swapDays(keyA, keyB) {
+    // Get activities for both days
+    const dayA = allDays.find(d => dateKey(d.date) === keyA);
+    const dayB = allDays.find(d => dateKey(d.date) === keyB);
+    if (!dayA || !dayB) return;
+    const actA = overrides[keyA] || { type: dayA.type, detail: dayA.detail, icon: dayA.icon, macroDay: dayA.macroDay, km: dayA.km, fueling: dayA.fueling, preferred: dayA.preferred };
+    const actB = overrides[keyB] || { type: dayB.type, detail: dayB.detail, icon: dayB.icon, macroDay: dayB.macroDay, km: dayB.km, fueling: dayB.fueling, preferred: dayB.preferred };
+    const updated = { ...overrides, [keyA]: actB, [keyB]: actA };
+    setOverrides(updated);
+    localStorage.setItem("ams_overrides", JSON.stringify(updated));
+    setSwapSource(null);
+  }
+
+  function skipDay(key) {
+    saveOverride(key, { type: "Rest (adjusted)", detail: "Session moved or skipped.", icon: "😴", macroDay: "rest", km: 0, preferred: false, skipped: true });
+  }
+
+  function setHolidayWeekMode(weekDays) {
+    const updated = { ...overrides };
+    weekDays.forEach(d => {
+      const k = dateKey(d.date);
+      const isLongRun = d.type.includes("Long") || d.km >= 18;
+      const isHard = d.macroDay === "hard";
+      if (isLongRun) {
+        updated[k] = { type: "Easy Run (holiday)", detail: `${Math.min(8, d.km)}km easy — holiday week`, icon: "🏖️", macroDay: "easy", km: Math.min(8, d.km), preferred: true };
+      } else if (isHard) {
+        updated[k] = { type: "Easy Run (holiday)", detail: "6km easy — holiday week", icon: "🏖️", macroDay: "easy", km: 6, preferred: true };
+      } else if (d.preferred) {
+        // keep as-is, just note holiday
+      }
+    });
+    setOverrides(updated);
+    localStorage.setItem("ams_overrides", JSON.stringify(updated));
+    setHolidayWeek(null);
+  }
+
   const activeRef = useRef(null);
 
   // Find the active day: today if within plan, else first day, else race day
@@ -1066,7 +1128,12 @@ export default function DayByDayPlan() {
     if (activeRef.current) activeRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [filter]);
 
-  const filtered = filter === "ALL" ? allDays : allDays.filter(d => d.phase.name === filter);
+  const filtered = (filter === "ALL" ? allDays : allDays.filter(d => d.phase.name === filter))
+    .map(day => {
+      const dk = dateKey(day.date);
+      const ov = overrides[dk];
+      return ov ? { ...day, ...ov, _overridden: true } : day;
+    });
 
   const byMonth = {};
   filtered.forEach(day => {
@@ -1074,6 +1141,15 @@ export default function DayByDayPlan() {
     if (!byMonth[key]) byMonth[key] = [];
     byMonth[key].push(day);
   });
+
+  // Group allDays into weeks for holiday mode
+  function getWeekDays(anyDay) {
+    const dk = dateKey(anyDay.date);
+    const d = new Date(anyDay.date);
+    const mon = new Date(d); mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    return allDays.filter(x => x.date >= mon && x.date <= sun);
+  }
 
   return (
     <div style={{ background: "#0a0a0f", minHeight: "100vh", fontFamily: "'Courier New', monospace", color: "#e2e8f0" }}>
@@ -1087,9 +1163,27 @@ export default function DayByDayPlan() {
         top: "52px",
         zIndex: 10,
       }}>
-        <div style={{ fontSize: "10px", color: "#475569", letterSpacing: "1px", marginBottom: "8px" }}>
-          28 Mar → 18 Oct · {allDays.length} days · Tap any day for nutrition
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+          <div style={{ fontSize: "10px", color: "#475569", letterSpacing: "1px" }}>
+            28 Mar → 18 Oct · {allDays.length} days · Tap any day for nutrition
+          </div>
+          <button onClick={() => { setEditMode(e => !e); setSwapSource(null); }} style={{
+            padding: "4px 10px", border: `1px solid ${editMode ? "#f97316" : "#1e293b"}`,
+            borderRadius: "5px", background: editMode ? "rgba(249,115,22,0.12)" : "transparent",
+            color: editMode ? "#f97316" : "#475569", fontSize: "9px", cursor: "pointer",
+            fontFamily: "'Courier New', monospace", letterSpacing: "1px",
+          }}>{editMode ? "✕ DONE" : "✎ EDIT"}</button>
         </div>
+        {editMode && swapSource && (
+          <div style={{ fontSize: "9px", color: "#facc15", letterSpacing: "1px", marginBottom: "6px" }}>
+            ↔ Tap another day to swap with it · tap ✕ to cancel
+          </div>
+        )}
+        {editMode && !swapSource && (
+          <div style={{ fontSize: "9px", color: "#f97316", letterSpacing: "1px", marginBottom: "6px" }}>
+            ✎ Edit mode · tap ⇄ to swap · 🏖 holiday week · ✕ skip day
+          </div>
+        )}
         <div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "2px", WebkitOverflowScrolling: "touch" }}>
           {["ALL","BASE","BUILD","PEAK","TAPER"].map(f => {
             const ph = phases.find(p => p.name === f);
@@ -1170,8 +1264,47 @@ export default function DayByDayPlan() {
                         </div>
                       </div>
 
+                      {/* Edit mode controls */}
+                      {editMode && !isOpen && (
+                        <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: "5px", marginTop: "6px", paddingTop: "6px", borderTop: "1px solid #1e293b" }}>
+                          {swapSource && swapSource !== dayKey ? (
+                            <button onClick={() => swapDays(swapSource, dayKey)} style={{
+                              flex: 1, padding: "6px", background: "rgba(250,204,21,0.12)", border: "1px solid #facc15",
+                              borderRadius: "5px", color: "#facc15", fontSize: "9px", cursor: "pointer", fontFamily: "'Courier New', monospace",
+                            }}>↔ SWAP HERE</button>
+                          ) : (
+                            <>
+                              <button onClick={() => setSwapSource(swapSource === dayKey ? null : dayKey)} style={{
+                                flex: 1, padding: "6px",
+                                background: swapSource === dayKey ? "rgba(250,204,21,0.15)" : "transparent",
+                                border: `1px solid ${swapSource === dayKey ? "#facc15" : "#1e293b"}`,
+                                borderRadius: "5px", color: swapSource === dayKey ? "#facc15" : "#475569",
+                                fontSize: "9px", cursor: "pointer", fontFamily: "'Courier New', monospace",
+                              }}>{swapSource === dayKey ? "✕ CANCEL" : "⇄ SWAP"}</button>
+                              <button onClick={() => {
+                                const wdays = getWeekDays(day);
+                                setHolidayWeekMode(wdays);
+                              }} style={{
+                                flex: 1, padding: "6px", background: "transparent", border: "1px solid #1e293b",
+                                borderRadius: "5px", color: "#475569", fontSize: "9px", cursor: "pointer", fontFamily: "'Courier New', monospace",
+                              }}>🏖 WEEK</button>
+                              <button onClick={() => skipDay(dayKey)} style={{
+                                flex: 1, padding: "6px", background: "transparent", border: "1px solid #1e293b",
+                                borderRadius: "5px", color: "#475569", fontSize: "9px", cursor: "pointer", fontFamily: "'Courier New', monospace",
+                              }}>✕ SKIP</button>
+                              {day._overridden && (
+                                <button onClick={() => clearOverride(dayKey)} style={{
+                                  flex: 1, padding: "6px", background: "rgba(74,222,128,0.08)", border: "1px solid #4ade8040",
+                                  borderRadius: "5px", color: "#4ade80", fontSize: "9px", cursor: "pointer", fontFamily: "'Courier New', monospace",
+                                }}>↺ RESET</button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+
                       {/* Expanded nutrition panel */}
-                      {isOpen && <MacroPanel
+                      {isOpen && !editMode && <MacroPanel
                         macroDay={day.macroDay}
                         fueling={day.fueling}
                         km={day.km}
