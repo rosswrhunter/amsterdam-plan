@@ -6,11 +6,15 @@ import WorkoutLog from './WorkoutLog.jsx'
 import Memory from './Memory.jsx'
 import Recipes from './Recipes.jsx'
 import Readiness from './Readiness.jsx'
+import WeeklySummary from './WeeklySummary.jsx'
+import ShoppingList from './ShoppingList.jsx'
 import RaceSimulator from './RaceSimulator.jsx'
 
 const TABS = [
   { id: "plan",    label: "PLAN",    icon: "📅" },
   { id: "ready",   label: "READY",   icon: "🌅" },
+  { id: "week",    label: "WEEK",    icon: "📊" },
+  { id: "shop",    label: "SHOP",    icon: "🛒" },
   { id: "race",    label: "RACE",    icon: "🏅" },
   { id: "recipes", label: "RECIPES", icon: "🍳" },
   { id: "log",     label: "LOG",     icon: "✍️" },
@@ -80,6 +84,8 @@ export default function Root() {
       {/* Tab content */}
       {tab === "plan"    && <App />}
       {tab === "ready"   && <Readiness allDays={generateAllDays()} />}
+      {tab === "week"    && <WeeklySummary allDays={generateAllDays()} workoutLog={workoutLog} />}
+      {tab === "shop"    && <ShoppingList allDays={generateAllDays()} />}
       {tab === "race"    && <RaceSimulator />}
       {tab === "log"     && <WorkoutLog log={workoutLog} onAdd={addWorkout} onDelete={deleteWorkout} allDays={generateAllDays()} />}
       {tab === "recipes" && <Recipes allDays={generateAllDays()} />}
