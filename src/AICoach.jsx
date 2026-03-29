@@ -97,24 +97,24 @@ export default function AICoach({ memory, workoutLog, allDays, calcDayMacros }) 
     setImagePreview(null);
     setLoading(true);
 
-    // Build live daily context — today, yesterday, tomorrow, day after
+    // Pass full plan so AI can answer questions about any date intelligently
     const now = new Date(); now.setHours(0,0,0,0);
-    const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
-    const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
-    const dayAfter = new Date(now); dayAfter.setDate(dayAfter.getDate() + 2);
 
-    const todayDay = getDayByDate(allDays, now);
-    const tomorrowDay = getDayByDate(allDays, tomorrow);
-    const yesterdayDay = getDayByDate(allDays, yesterday);
-    const dayAfterDay = getDayByDate(allDays, dayAfter);
+    const liveCtx = allDays && calcDayMacros ? (() => {
+      const planLines = allDays.map(day => {
+        const m = calcDayMacros(day.macroDay, day.km);
+        const dateStr = day.date.toISOString().split("T")[0];
+        const dow = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][day.date.getDay()];
+        return `${dateStr} ${dow} [${day.phase.name}] ${day.type}${day.km ? " "+day.km+"km" : ""} | eat:${m.kcal}kcal P:${m.protein}g C:${m.carbs}g F:${m.fat}g | burn:~${m.burn}kcal${day.fueling ? " | fueling:"+day.fueling : ""}`;
+      }).join("\n");
 
-    const liveCtx = allDays && calcDayMacros ? `\n\nLIVE PLAN CONTEXT (today is ${now.toDateString()}):
-${formatDayContext(yesterdayDay, calcDayMacros, "YESTERDAY")}
-${formatDayContext(todayDay, calcDayMacros, "TODAY")}
-${formatDayContext(tomorrowDay, calcDayMacros, "TOMORROW")}
-${formatDayContext(dayAfterDay, calcDayMacros, "DAY AFTER")}
+      return `\n\nTODAY IS: ${now.toDateString()} (${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][now.getDay()]})
 
-When asked about meals, shopping, fueling or nutrition for any of these days, use the exact macro targets above. When asked "what should I eat tomorrow" give specific meals that hit the carb/protein/fat/kcal targets for that day's session.` : "";
+COMPLETE TRAINING PLAN — 30 Mar to 18 Oct 2026:
+${planLines}
+
+When the user references any day (today, tomorrow, Saturday, next week, a specific date etc), look it up above and use those exact macro and session values. Always give specific kcal, carbs, protein, fat numbers for the day in question. When asked for meals or a meal plan, design them to precisely hit those targets.`;
+    })() : "";
 
     const memCtx = memory ? `\n\nROSS'S NOTES:\n${memory}` : "";
     const logCtx = workoutLog?.length
