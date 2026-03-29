@@ -315,7 +315,7 @@ const macroColor = { hard: "#f97316", easy: "#60a5fa", active: "#4ade80", rest: 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const DAYS   = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
-function generateAllDays() {
+export function generateAllDays() {
   const days = [];
   const cur = new Date(START_DATE);
   while (cur <= RACE_DATE) {

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Login from './Login.jsx'
-import App from './App.jsx'
+import App, { generateAllDays } from './App.jsx'
 import AICoach from './AICoach.jsx'
 import WorkoutLog from './WorkoutLog.jsx'
 import Memory from './Memory.jsx'
@@ -71,7 +71,7 @@ export default function Root() {
 
       {/* Tab content */}
       {tab === "plan"   && <App />}
-      {tab === "log"    && <WorkoutLog log={workoutLog} onAdd={addWorkout} onDelete={deleteWorkout} />}
+      {tab === "log"    && <WorkoutLog log={workoutLog} onAdd={addWorkout} onDelete={deleteWorkout} allDays={generateAllDays()} />}
       {tab === "coach"  && <AICoach memory={memory} workoutLog={workoutLog} />}
       {tab === "memory" && <Memory memory={memory} onSave={saveMemory} />}
     </div>
