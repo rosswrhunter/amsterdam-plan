@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 const USERS = [
-  { username: "ross", password: "amsterdam2026" },
+  { username: "ross", password: "C7VmbO6K2l6GmzL1Ql1H" },
 ];
 
 export default function Login({ onLogin }) {
