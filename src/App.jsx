@@ -263,6 +263,34 @@ Respond ONLY with valid JSON, no markdown:
   return JSON.parse(text.replace(/```json|```/g, "").trim());
 }
 
+function StaticMealCard({ meal, color }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${open ? color : "#1e293b"}`, borderRadius: "6px", marginBottom: "4px", overflow: "hidden" }}>
+      <div onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }} style={{ padding: "8px 10px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
+        <span style={{ fontSize: "9px", color, letterSpacing: "1px" }}>{meal.meal.toUpperCase()}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ fontSize: "9px", color: "#475569" }}>P:{meal.p} C:{meal.c} F:{meal.f}</span>
+          <span style={{ fontSize: "10px", color: "#334155" }}>{open ? "▲" : "▼"}</span>
+        </div>
+      </div>
+      {open && (
+        <div style={{ padding: "0 10px 10px", borderTop: "1px solid #1e293b" }}>
+          <div style={{ fontSize: "11px", color: "#94a3b8", lineHeight: 1.6, marginTop: "8px" }}>{meal.food}</div>
+          <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+            {[["P", meal.p, "#60a5fa"], ["C", meal.c, "#facc15"], ["F", meal.f, "#f97316"]].map(([label, val, col]) => (
+              <div key={label} style={{ background: `${col}12`, border: `1px solid ${col}30`, borderRadius: "5px", padding: "4px 8px", textAlign: "center" }}>
+                <div style={{ fontSize: "8px", color: "#475569" }}>{label}</div>
+                <div style={{ fontSize: "11px", fontWeight: "bold", color: col }}>{val}g</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RecipeCard({ recipe, color, mealLabel }) {
   const [open, setOpen] = useState(false);
   return (
@@ -350,13 +378,7 @@ function MacroPanel({ macroDay, fueling, km, recipes, loadingRecipes, recipeErro
           return isRecipe ? (
             <RecipeCard key={i} recipe={meal} color={color} mealLabel={meal.meal} />
           ) : (
-            <div key={meal.meal} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid #1e293b", borderRadius: "6px", padding: "7px 10px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
-                <span style={{ fontSize: "9px", color, letterSpacing: "1px" }}>{meal.meal.toUpperCase()}</span>
-                <span style={{ fontSize: "9px", color: "#475569" }}>P:{meal.p} C:{meal.c} F:{meal.f}</span>
-              </div>
-              <div style={{ fontSize: "10px", color: "#94a3b8" }}>{meal.food}</div>
-            </div>
+            <StaticMealCard key={i} meal={meal} color={color} />
           );
         })}
       </div>
