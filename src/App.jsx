@@ -332,11 +332,20 @@ export default function DayByDayPlan() {
   const allDays = generateAllDays();
   const [filter, setFilter] = useState("ALL");
   const [expanded, setExpanded] = useState(null);
-  const startRef = useRef(null);
+  const activeRef = useRef(null);
+
+  // Find the active day: today if within plan, else first day, else race day
+  const today = new Date(); today.setHours(0,0,0,0);
+  const planStart = new Date(START_DATE); planStart.setHours(0,0,0,0);
+  const planEnd = new Date(RACE_DATE); planEnd.setHours(0,0,0,0);
+  const activeDate = today < planStart ? planStart : today > planEnd ? planEnd : today;
+  const activeDateStr = activeDate.toDateString();
+  const isBeforePlan = today < planStart;
+  const isAfterPlan = today > planEnd;
 
   useEffect(() => {
-    if (startRef.current) startRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
+    if (activeRef.current) activeRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [filter]);
 
   const filtered = filter === "ALL" ? allDays : allDays.filter(d => d.phase.name === filter);
 
@@ -346,8 +355,6 @@ export default function DayByDayPlan() {
     if (!byMonth[key]) byMonth[key] = [];
     byMonth[key].push(day);
   });
-
-  const firstDay = new Date(2026, 2, 30);
 
   return (
     <div style={{ background: "#0a0a0f", minHeight: "100vh", fontFamily: "'Courier New', monospace", color: "#e2e8f0" }}>
@@ -385,17 +392,17 @@ export default function DayByDayPlan() {
               <div style={{ display: "flex", flexDirection: "column", gap: "5px", marginBottom: "4px" }}>
                 {days.map((day, i) => {
                   const dayKey = day.date.toDateString();
-                  const isFirst   = day.date.toDateString() === firstDay.toDateString();
+                  const isActive  = day.date.toDateString() === activeDateStr;
                   const isRace    = day.date.toDateString() === RACE_DATE.toDateString();
                   const isOpen    = expanded === dayKey;
                   const mc        = macroColor[day.macroDay];
 
                   return (
-                    <div key={i} ref={isFirst ? startRef : null}
+                    <div key={i} ref={isActive ? activeRef : null}
                       onClick={() => setExpanded(isOpen ? null : dayKey)}
                       style={{
-                        background: isRace ? "rgba(129,140,248,0.12)" : isFirst ? "rgba(74,222,128,0.07)" : day.preferred ? "rgba(255,255,255,0.025)" : "rgba(255,255,255,0.008)",
-                        border: `1px solid ${isOpen ? mc : isRace ? "#818cf8" : isFirst ? "#4ade8060" : day.preferred ? "#1e293b" : "#0f172a"}`,
+                        background: isRace ? "rgba(129,140,248,0.12)" : isActive ? "rgba(74,222,128,0.07)" : day.preferred ? "rgba(255,255,255,0.025)" : "rgba(255,255,255,0.008)",
+                        border: `1px solid ${isOpen ? mc : isRace ? "#818cf8" : isActive ? "#4ade8060" : day.preferred ? "#1e293b" : "#0f172a"}`,
                         borderLeft: `3px solid ${day.phase.color}`,
                         borderRadius: "8px", padding: "9px 12px",
                         cursor: "pointer", transition: "border-color 0.15s",
@@ -405,11 +412,11 @@ export default function DayByDayPlan() {
                       <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
                         {/* Date */}
                         <div style={{ minWidth: "42px" }}>
-                          <div style={{ fontSize: "9px", color: isFirst ? "#4ade80" : "#475569", letterSpacing: "1px" }}>{DAYS[day.date.getDay()].toUpperCase()}</div>
-                          <div style={{ fontSize: "17px", fontWeight: "bold", color: isFirst ? "#4ade80" : isRace ? "#818cf8" : day.preferred ? "#e2e8f0" : "#334155", lineHeight: 1.1 }}>
+                          <div style={{ fontSize: "9px", color: isActive ? "#4ade80" : "#475569", letterSpacing: "1px" }}>{DAYS[day.date.getDay()].toUpperCase()}</div>
+                          <div style={{ fontSize: "17px", fontWeight: "bold", color: isActive ? "#4ade80" : isRace ? "#818cf8" : day.preferred ? "#e2e8f0" : "#334155", lineHeight: 1.1 }}>
                             {day.date.getDate()}
                           </div>
-                          {isFirst && <div style={{ fontSize: "7px", color: "#4ade80", letterSpacing: "1px" }}>TODAY</div>}
+                          {isActive && <div style={{ fontSize: "7px", color: "#4ade80", letterSpacing: "1px" }}>{isBeforePlan ? "START" : isAfterPlan ? "RACE" : "TODAY"}</div>}
                           {isRace  && <div style={{ fontSize: "7px", color: "#818cf8", letterSpacing: "1px" }}>RACE</div>}
                         </div>
 
