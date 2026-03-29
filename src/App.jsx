@@ -234,6 +234,27 @@ function MacroBar({ value, max, color }) {
   );
 }
 
+// Robustly extract JSON from AI response — handles trailing commas, truncation, extra text
+function safeParseJSON(text) {
+  const cleaned = text.replace(/```json|```/g, "").trim();
+  try { return JSON.parse(cleaned); } catch {}
+  // Try extracting the first {...} block
+  const match = cleaned.match(/\{[\s\S]*\}/);
+  if (match) {
+    try { return JSON.parse(match[0]); } catch {}
+    // Remove trailing commas before } or ]
+    const fixed = match[0].replace(/,\s*([}\]])/g, "$1");
+    try { return JSON.parse(fixed); } catch {}
+    // Attempt to close unclosed JSON by appending closing braces
+    let attempt = fixed;
+    for (let i = 0; i < 5; i++) {
+      attempt += "}";
+      try { return JSON.parse(attempt); } catch {}
+    }
+  }
+  throw new Error("Could not parse AI response as JSON");
+}
+
 const DISLIKED = ["cottage cheese", "feta"];
 
 async function generateDayRecipes(macroDay) {
@@ -277,7 +298,7 @@ Respond ONLY with valid JSON, no markdown:
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
   const text = data.choices?.[0]?.message?.content || "";
-  return JSON.parse(text.replace(/```json|```/g, "").trim());
+  return safeParseJSON(text);
 }
 
 function SwapPrompt({ color, swapping, onSwap }) {
@@ -864,7 +885,7 @@ export default function DayByDayPlan() {
                             });
                             const data = await res.json();
                             const text = data.choices?.[0]?.message?.content || "";
-                            const newMeal = JSON.parse(text.replace(/```json|```/g, "").trim());
+                            const newMeal = safeParseJSON(text);
                             // Force meal field to exactly match mealName so lookup always works
                             newMeal.meal = mealName;
                             setDayRecipes(p => {
