@@ -296,13 +296,10 @@ function RecipeCard({ recipe, color }) {
   );
 }
 
-function MacroPanel({ macroDay, fueling, km }) {
+function MacroPanel({ macroDay, fueling, km, recipes, loadingRecipes, recipeError, onGenerateRecipes }) {
   const m = macroData[macroDay] || macroData["hard"];
   const dyn = calcDayMacros(macroDay, km);
   const color = m.color;
-  const [recipes, setRecipes] = useState(null);
-  const [loadingRecipes, setLoadingRecipes] = useState(false);
-  const [recipeError, setRecipeError] = useState(null);
 
   return (
     <div style={{ marginTop: "10px", borderTop: `1px solid ${color}30`, paddingTop: "10px" }}>
@@ -360,18 +357,9 @@ function MacroPanel({ macroDay, fueling, km }) {
       {/* Recipe Generator */}
       <div style={{ marginTop: "10px" }}>
         <button
-          onClick={async (e) => {
+          onClick={(e) => {
             e.stopPropagation();
-            if (recipes) { setRecipes(null); return; }
-            setLoadingRecipes(true);
-            setRecipeError(null);
-            try {
-              const r = await generateDayRecipes(macroDay);
-              setRecipes(r);
-            } catch (err) {
-              setRecipeError(err.message || "Failed to generate. Try again.");
-            }
-            setLoadingRecipes(false);
+            onGenerateRecipes();
           }}
           disabled={loadingRecipes}
           style={{
@@ -551,6 +539,9 @@ export default function DayByDayPlan() {
   const allDays = generateAllDays();
   const [filter, setFilter] = useState("ALL");
   const [expanded, setExpanded] = useState(null);
+  const [dayRecipes, setDayRecipes] = useState({});
+  const [dayRecipeLoading, setDayRecipeLoading] = useState({});
+  const [dayRecipeError, setDayRecipeError] = useState({});
   const activeRef = useRef(null);
 
   // Find the active day: today if within plan, else first day, else race day
@@ -671,7 +662,29 @@ export default function DayByDayPlan() {
                       </div>
 
                       {/* Expanded nutrition panel */}
-                      {isOpen && <MacroPanel macroDay={day.macroDay} fueling={day.fueling} km={day.km} />}
+                      {isOpen && <MacroPanel
+                        macroDay={day.macroDay}
+                        fueling={day.fueling}
+                        km={day.km}
+                        recipes={dayRecipes[dayKey] || null}
+                        loadingRecipes={!!dayRecipeLoading[dayKey]}
+                        recipeError={dayRecipeError[dayKey] || null}
+                        onGenerateRecipes={async () => {
+                          if (dayRecipes[dayKey]) {
+                            setDayRecipes(p => ({ ...p, [dayKey]: null }));
+                            return;
+                          }
+                          setDayRecipeLoading(p => ({ ...p, [dayKey]: true }));
+                          setDayRecipeError(p => ({ ...p, [dayKey]: null }));
+                          try {
+                            const r = await generateDayRecipes(day.macroDay);
+                            setDayRecipes(p => ({ ...p, [dayKey]: r }));
+                          } catch (err) {
+                            setDayRecipeError(p => ({ ...p, [dayKey]: err.message || "Failed to generate. Try again." }));
+                          }
+                          setDayRecipeLoading(p => ({ ...p, [dayKey]: false }));
+                        }}
+                      />}
                     </div>
                   );
                 })}
