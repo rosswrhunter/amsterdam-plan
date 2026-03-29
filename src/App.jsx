@@ -217,7 +217,7 @@ function MacroBar({ value, max, color }) {
   );
 }
 
-const DISLIKED = ["cottage cheese"];
+const DISLIKED = ["cottage cheese", "feta"];
 
 async function generateDayRecipes(macroDay) {
   const m = macroData[macroDay] || macroData["hard"];
