@@ -497,7 +497,7 @@ async function analyseMacros({ text, imageB64, mealName }) {
 
 // Inline log panel that opens inside each meal card
 function MealLogPanel({ mealName, entry, onSave, onClose, color, plannedMeal }) {
-  const [mode, setMode] = useState("text"); // "text" | "photo"
+  const [mode, setMode] = useState(plannedMeal ? "planned" : "text");
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -561,30 +561,36 @@ function MealLogPanel({ mealName, entry, onSave, onClose, color, plannedMeal }) 
 
       {!entry && (
         <>
-          {/* I had this — instant log from planned meal */}
-          {plannedMeal && (
-            <button onClick={logPlanned} style={{
-              width: "100%", padding: "10px 12px", marginBottom: "8px",
-              background: `${color}18`, border: `1px solid ${color}`,
-              borderRadius: "7px", color, fontSize: "11px", cursor: "pointer",
-              fontFamily: "'Courier New', monospace", fontWeight: "bold", textAlign: "center",
-            }}>✓ I had this</button>
-          )}
-
-          {/* Mode toggle */}
+          {/* 3 options in a row */}
           <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
-            {[["text","✏️ Type what I ate"],["photo","📷 Photo"]].map(([m, label]) => (
-              <button key={m} onClick={() => setMode(m)} style={{
-                flex: 1, padding: "7px", border: `1px solid ${mode === m ? color : "#1e293b"}`,
-                borderRadius: "6px", background: mode === m ? `${color}18` : "transparent",
-                color: mode === m ? color : "#475569", fontSize: "10px", cursor: "pointer",
-                fontFamily: "'Courier New', monospace",
-              }}>{label}</button>
-            ))}
+            {[
+              ["planned", "✓ Had this"],
+              ["text",    "✏️ Type"],
+              ["photo",   "📷 Photo"],
+            ].map(([m, label]) => {
+              if (m === "planned" && !plannedMeal) return null;
+              const isActive = mode === m;
+              return (
+                <button key={m} onClick={() => setMode(m)} style={{
+                  flex: 1, padding: "9px 4px",
+                  border: `1px solid ${isActive ? color : "#1e293b"}`,
+                  borderRadius: "7px", background: isActive ? `${color}18` : "transparent",
+                  color: isActive ? color : "#475569", fontSize: "10px", cursor: "pointer",
+                  fontFamily: "'Courier New', monospace", fontWeight: isActive ? "bold" : "normal",
+                }}>{label}</button>
+              );
+            })}
           </div>
 
-          {mode === "text" && (
-            <>
+          {mode === "planned" && plannedMeal && (
+            <button onClick={logPlanned} style={{
+              width: "100%", padding: "11px", background: `${color}18`,
+              border: `1px solid ${color}`, borderRadius: "7px", color,
+              fontSize: "12px", cursor: "pointer", fontFamily: "'Courier New', monospace", fontWeight: "bold",
+            }}>✓ Log planned meal</button>
+          )}
+
+          {mode === "text" && (            <>
               <textarea value={input} onChange={e => setInput(e.target.value)} onClick={e => e.stopPropagation()}
                 placeholder={"e.g. 100g oats, 200ml oat milk, 1 banana, 1 tbsp honey"}
                 style={{ width: "100%", padding: "9px 10px", background: "rgba(255,255,255,0.04)", border: "1px solid #1e293b", borderRadius: "7px", color: "#e2e8f0", fontSize: "11px", fontFamily: "'Courier New', monospace", resize: "none", height: "70px", boxSizing: "border-box", outline: "none", marginBottom: "8px" }}
