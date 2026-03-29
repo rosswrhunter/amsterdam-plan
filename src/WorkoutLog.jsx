@@ -15,7 +15,8 @@ const feltEmoji  = { great: "🔥", good: "✅", ok: "😐", tough: "😤", bad:
 function buildPlanLookup(allDays) {
   const lookup = {};
   allDays.forEach(day => {
-    const key = day.date.toISOString().split("T")[0];
+    const d = day.date;
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
     lookup[key] = day;
   });
   return lookup;
