@@ -32,6 +32,7 @@ export default function WeeklySummary({ allDays, workoutLog }) {
   }, []);
   const [weightInput, setWeightInput] = useState("");
   const [showWeightInput, setShowWeightInput] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const { monday, sunday } = getWeekBounds(weekOffset);
   const { monday: nextMon, sunday: nextSun } = getWeekBounds(weekOffset + 1);
@@ -137,6 +138,108 @@ Respond as JSON:
     setLoading(false);
   }
 
+
+  async function shareWeek() {
+    setSharing(true);
+    try {
+      const canvas = document.createElement("canvas");
+      const W = 1080, H = 1080;
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext("2d");
+
+      ctx.fillStyle = "#0a0a0f";
+      ctx.fillRect(0, 0, W, H);
+      const grad = ctx.createLinearGradient(0, 0, W, H/2);
+      grad.addColorStop(0, col + "20");
+      grad.addColorStop(1, "transparent");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H/2);
+
+      ctx.fillStyle = col;
+      ctx.font = "bold 34px monospace";
+      ctx.fillText("AMSTERDAM MARATHON 2026", 60, 88);
+      ctx.fillStyle = "#475569";
+      ctx.font = "26px monospace";
+      ctx.fillText(fmt(monday) + " – " + fmt(sunday), 60, 134);
+      ctx.fillStyle = col + "40";
+      ctx.fillRect(60, 154, W - 120, 2);
+
+      ctx.fillStyle = col + "22";
+      ctx.beginPath(); ctx.roundRect(60, 178, 190, 46, 8); ctx.fill();
+      ctx.fillStyle = col;
+      ctx.font = "bold 22px monospace";
+      ctx.fillText(weekPhase + " PHASE", 78, 210);
+
+      const stats = [
+        { label: "KM PLANNED", value: plannedKm + "km", c: col },
+        { label: "SESSIONS", value: String(weekLogs.length), c: "#60a5fa" },
+        { label: "AVG DEFICIT", value: avgDeficit + " kcal", c: "#4ade80" },
+        { label: "WEIGHT", value: latestWeight ? latestWeight + "kg" : "—", c: "#facc15" },
+      ];
+      stats.forEach((s, i) => {
+        const x = 60 + (i % 2) * 490;
+        const y = 260 + Math.floor(i / 2) * 175;
+        ctx.fillStyle = "rgba(255,255,255,0.04)";
+        ctx.beginPath(); ctx.roundRect(x, y, 450, 150, 12); ctx.fill();
+        ctx.strokeStyle = s.c + "35"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.roundRect(x, y, 450, 150, 12); ctx.stroke();
+        ctx.fillStyle = "#475569"; ctx.font = "20px monospace";
+        ctx.fillText(s.label, x + 22, y + 40);
+        ctx.fillStyle = s.c; ctx.font = "bold 54px monospace";
+        ctx.fillText(s.value, x + 22, y + 108);
+      });
+
+      const dotY = 638;
+      ctx.fillStyle = "#334155"; ctx.font = "20px monospace";
+      ctx.fillText("THIS WEEK", 60, dotY);
+      weekDays.slice(0, 7).forEach((d, i) => {
+        const logged = weekLogs.find(l => l.date === dateKey(d.date));
+        const x = 60 + i * 139, y = dotY + 14;
+        ctx.fillStyle = logged ? col : "rgba(255,255,255,0.04)";
+        ctx.beginPath(); ctx.roundRect(x, y, 120, 110, 10); ctx.fill();
+        ctx.fillStyle = logged ? "#000" : "#1e293b";
+        ctx.font = "bold 26px monospace";
+        ctx.fillText(DAYS[d.date.getDay()].slice(0,3).toUpperCase(), x + 14, y + 40);
+        ctx.font = "28px monospace";
+        ctx.fillText(d.icon || "·", x + 14, y + 78);
+      });
+
+      if (summary && summary.headline) {
+        ctx.fillStyle = col + "12";
+        ctx.beginPath(); ctx.roundRect(60, 782, W - 120, 148, 12); ctx.fill();
+        ctx.strokeStyle = col + "35"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.roundRect(60, 782, W - 120, 148, 12); ctx.stroke();
+        ctx.fillStyle = col; ctx.font = "bold 25px monospace";
+        const words = summary.headline.split(" ");
+        let line = "", ly = 826;
+        for (const word of words) {
+          const test = line + (line ? " " : "") + word;
+          if (ctx.measureText(test).width > W - 180) { ctx.fillText(line, 84, ly); line = word; ly += 34; }
+          else { line = test; }
+        }
+        ctx.fillText(line, 84, ly);
+      }
+
+      ctx.fillStyle = "#1e293b"; ctx.font = "20px monospace";
+      ctx.fillText("Amsterdam Marathon · 18 Oct 2026", 60, 1048);
+
+      canvas.toBlob(async (blob) => {
+        const file = new File([blob], "training-week.png", { type: "image/png" });
+        try {
+          if (navigator.share && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: "Training Week", text: "Week of " + fmt(monday) });
+          } else {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a"); a.href = url; a.download = "training-week.png"; a.click();
+            URL.revokeObjectURL(url);
+          }
+        } catch(e) {}
+        setSharing(false);
+      }, "image/png");
+    } catch(e) { console.error(e); setSharing(false); }
+  }
+
+
   const phaseColors = { BASE: "#4ade80", BUILD: "#facc15", PEAK: "#f97316", TAPER: "#818cf8" };
   const col = phaseColors[weekPhase] || "#4ade80";
   const nextCol = phaseColors[nextPhase] || "#4ade80";
@@ -235,6 +338,17 @@ Respond as JSON:
         fontFamily: "'Courier New', monospace", fontWeight: "bold", marginBottom: "14px",
       }}>
         {loading ? "GENERATING…" : "✦ GENERATE WEEK SUMMARY"}
+      </button>
+
+      <button onClick={shareWeek} disabled={sharing} style={{
+        width: "100%", padding: "13px", marginBottom: "14px",
+        background: sharing ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.04)",
+        border: "1px solid #334155", borderRadius: "8px",
+        color: sharing ? "#334155" : "#94a3b8",
+        fontSize: "12px", letterSpacing: "2px", cursor: sharing ? "default" : "pointer",
+        fontFamily: "'Courier New', monospace", fontWeight: "bold",
+      }}>
+        {sharing ? "GENERATING…" : "📤 SHARE THIS WEEK"}
       </button>
 
       {summary && (
