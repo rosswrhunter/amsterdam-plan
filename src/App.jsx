@@ -659,30 +659,6 @@ function DayLogger({ photoLog, onSave, targets, color }) {
 
   return (
     <div style={{ marginTop: "14px", borderTop: `1px solid ${color}20`, paddingTop: "12px" }}>
-      <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "2px", marginBottom: "10px" }}>📊 ACTUAL vs TARGET</div>
-
-      {[
-        { label: "KCAL",    actual: total.kcal,    target: targets.kcal,    unit: "",  col: color },
-        { label: "PROTEIN", actual: total.protein, target: targets.protein, unit: "g", col: "#60a5fa" },
-        { label: "CARBS",   actual: total.carbs,   target: targets.carbs,   unit: "g", col: "#facc15" },
-        { label: "FAT",     actual: total.fat,     target: targets.fat,     unit: "g", col: "#f97316" },
-      ].map(bar => {
-        const pct = Math.min(100, Math.round((bar.actual / Math.max(1, bar.target)) * 100));
-        const over = bar.actual > bar.target * 1.1;
-        const statusCol = !logged ? "#1e293b" : over ? "#f97316" : bar.actual >= bar.target * 0.85 ? "#4ade80" : "#facc15";
-        return (
-          <div key={bar.label} style={{ marginBottom: "8px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
-              <span style={{ fontSize: "9px", color: "#475569", letterSpacing: "1px" }}>{bar.label}</span>
-              <span style={{ fontSize: "10px", fontWeight: "bold", color: statusCol }}>{bar.actual}{bar.unit} <span style={{ color: "#334155", fontWeight: "normal" }}>/ {bar.target}{bar.unit}</span></span>
-            </div>
-            <div style={{ background: "#1e293b", borderRadius: "3px", height: "5px" }}>
-              <div style={{ background: statusCol, borderRadius: "3px", height: "5px", width: `${pct}%`, transition: "width 0.4s" }} />
-            </div>
-          </div>
-        );
-      })}
-
       {/* Extras */}
       <div style={{ marginTop: "12px" }}>
         <button onClick={() => setShowExtras(s => !s)} style={{
@@ -801,21 +777,44 @@ function MacroPanel({ macroDay, fueling, km, phase, recipes, loadingRecipes, rec
           ))}
         </div>
 
-        {/* Macro bars */}
-        {[
-          { name: "PROTEIN", value: dyn.protein, unit: "g", max: 200, color: "#60a5fa" },
-          { name: "CARBS", value: dyn.carbs, unit: "g", max: 550, color: "#facc15" },
-          { name: "FAT", value: dyn.fat, unit: "g", max: 130, color: "#f97316" },
-        ].map(bar => (
-          <div key={bar.name} style={{ marginBottom: "7px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
-              <span style={{ fontSize: "9px", color: "#64748b", letterSpacing: "1px" }}>{bar.name}</span>
-              <span style={{ fontSize: "10px", fontWeight: "bold", color: bar.color }}>{bar.value}{bar.unit}</span>
-            </div>
-            <MacroBar value={bar.value} max={bar.max} color={bar.color} />
-          </div>
-        ))}
-        <div style={{ fontSize: "9px", color: "#334155", marginTop: "6px", lineHeight: 1.4 }}>💡 Burns ~{dyn.burn.toLocaleString()} kcal · deficit ~{dyn.deficit} kcal · {macroDay === "longrun" || macroDay === "preload" ? "Fuel well — high volume day." : macroDay === "rest" ? "Rest day: keep carbs low, protein high." : "Whole foods, hit protein first."}</div>
+        {/* Macro bars — show actual vs target when meals are logged */}
+        {(() => {
+          const logged = (photoLog || []);
+          const actual = logged.reduce((s, e) => ({
+            kcal: s.kcal + (e.kcal||0), protein: s.protein + (e.protein||0),
+            carbs: s.carbs + (e.carbs||0), fat: s.fat + (e.fat||0),
+          }), { kcal:0, protein:0, carbs:0, fat:0 });
+          const hasLogged = logged.length > 0;
+          return [
+            { name: "KCAL",    actual: actual.kcal,    target: dyn.kcal,    unit: "",  col: color,    max: dyn.kcal * 1.3 },
+            { name: "PROTEIN", actual: actual.protein, target: dyn.protein, unit: "g", col: "#60a5fa", max: 220 },
+            { name: "CARBS",   actual: actual.carbs,   target: dyn.carbs,   unit: "g", col: "#facc15", max: Math.max(dyn.carbs * 1.3, 100) },
+            { name: "FAT",     actual: actual.fat,     target: dyn.fat,     unit: "g", col: "#f97316", max: 150 },
+          ].map(bar => {
+            const targetPct = Math.min(98, Math.round((bar.target / bar.max) * 100));
+            const actualPct = Math.min(100, Math.round((bar.actual / bar.max) * 100));
+            const over = hasLogged && bar.actual > bar.target * 1.1;
+            const close = hasLogged && bar.actual >= bar.target * 0.85;
+            const barCol = !hasLogged ? bar.col : over ? "#f97316" : close ? "#4ade80" : "#facc15";
+            return (
+              <div key={bar.name} style={{ marginBottom: "7px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+                  <span style={{ fontSize: "9px", color: "#64748b", letterSpacing: "1px" }}>{bar.name}</span>
+                  <span style={{ fontSize: "10px", fontWeight: "bold", color: barCol }}>
+                    {hasLogged ? <>{bar.actual}{bar.unit} <span style={{ color: "#334155", fontWeight: "normal" }}>/ {bar.target}{bar.unit}</span></> : <span style={{ color: bar.col }}>{bar.target}{bar.unit}</span>}
+                  </span>
+                </div>
+                <div style={{ background: "#1e293b", borderRadius: "3px", height: "6px", position: "relative" }}>
+                  {/* Target line */}
+                  <div style={{ position: "absolute", top: "-2px", left: `${targetPct}%`, width: "2px", height: "10px", background: "#475569", borderRadius: "1px", zIndex: 2 }} />
+                  {/* Actual fill */}
+                  <div style={{ background: barCol, borderRadius: "3px", height: "6px", width: `${hasLogged ? actualPct : targetPct}%`, transition: "width 0.4s", opacity: hasLogged ? 1 : 0.4 }} />
+                </div>
+              </div>
+            );
+          });
+        })()}
+        <div style={{ fontSize: "9px", color: "#334155", marginTop: "4px", lineHeight: 1.4 }}>💡 Burns ~{dyn.burn.toLocaleString()} kcal · deficit ~{dyn.deficit} kcal · {macroDay === "longrun" || macroDay === "preload" ? "Fuel well — high volume day." : macroDay === "rest" ? "Rest day: keep carbs low, protein high." : "Whole foods, hit protein first."}</div>
       </div>
 
       {/* Meals */}
