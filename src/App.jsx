@@ -301,25 +301,17 @@ Respond ONLY with valid JSON, no markdown:
   return safeParseJSON(text);
 }
 
-function SwapPrompt({ color, swapping, onSwap }) {
-  const [showInput, setShowInput] = useState(false);
+const SWAP_SUGGESTIONS = ["Asian", "Spanish", "Mexican", "Italian", "High protein", "Quick 10 min", "Greek", "Indian"];
+
+function SwapPanel({ color, onSwap, onClose }) {
   const [prompt, setPrompt] = useState("");
-  const suggestions = ["Asian", "Spanish", "Mexican", "High protein", "Quick 10 min", "Italian"];
-  if (swapping) return <span style={{ fontSize: "10px", color: "#475569", padding: "2px 6px" }}>…</span>;
-  if (!showInput) return (
-    <button onClick={(e) => { e.stopPropagation(); setShowInput(true); }} style={{
-      background: "transparent", border: `1px solid ${color}40`, borderRadius: "4px",
-      color: color, fontSize: "10px", cursor: "pointer",
-      padding: "1px 6px", fontFamily: "'Courier New', monospace", lineHeight: 1.4,
-    }}>↻</button>
-  );
   return (
-    <div onClick={e => e.stopPropagation()} style={{ marginTop: "8px", borderTop: "1px solid #1e293b", paddingTop: "8px" }}>
-      <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "1px", marginBottom: "6px" }}>What do you want instead?</div>
-      <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "7px" }}>
-        {suggestions.map(s => (
-          <button key={s} onClick={() => setPrompt(s)} style={{
-            padding: "3px 8px", border: `1px solid ${prompt === s ? color : "#1e293b"}`,
+    <div onClick={e => e.stopPropagation()} style={{ padding: "10px 10px 10px", borderTop: "1px solid #1e293b", background: "rgba(0,0,0,0.2)" }}>
+      <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "1px", marginBottom: "7px" }}>What do you fancy?</div>
+      <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "8px" }}>
+        {SWAP_SUGGESTIONS.map(s => (
+          <button key={s} onClick={(e) => { e.stopPropagation(); setPrompt(p => p === s ? "" : s); }} style={{
+            padding: "3px 9px", border: `1px solid ${prompt === s ? color : "#1e293b"}`,
             borderRadius: "12px", background: prompt === s ? `${color}20` : "transparent",
             color: prompt === s ? color : "#475569", fontSize: "9px", cursor: "pointer",
             fontFamily: "'Courier New', monospace",
@@ -331,21 +323,21 @@ function SwapPrompt({ color, swapping, onSwap }) {
           value={prompt}
           onChange={e => setPrompt(e.target.value)}
           onClick={e => e.stopPropagation()}
-          placeholder="or type anything… e.g. leftover prawns"
+          placeholder="e.g. leftover prawns, something cold…"
           style={{
-            flex: 1, padding: "6px 9px", background: "rgba(255,255,255,0.03)",
-            border: `1px solid #1e293b`, borderRadius: "5px", color: "#e2e8f0",
+            flex: 1, padding: "7px 9px", background: "rgba(255,255,255,0.04)",
+            border: `1px solid #1e293b`, borderRadius: "6px", color: "#e2e8f0",
             fontSize: "10px", fontFamily: "'Courier New', monospace", outline: "none",
           }}
         />
-        <button onClick={(e) => { e.stopPropagation(); onSwap(prompt || ""); setShowInput(false); setPrompt(""); }} style={{
-          padding: "6px 10px", background: `${color}20`, border: `1px solid ${color}`,
-          borderRadius: "5px", color, fontSize: "10px", cursor: "pointer",
-          fontFamily: "'Courier New', monospace",
+        <button onClick={(e) => { e.stopPropagation(); onSwap(prompt); }} style={{
+          padding: "7px 12px", background: `${color}25`, border: `1px solid ${color}`,
+          borderRadius: "6px", color, fontSize: "11px", cursor: "pointer",
+          fontFamily: "'Courier New', monospace", fontWeight: "bold",
         }}>GO</button>
-        <button onClick={(e) => { e.stopPropagation(); setShowInput(false); setPrompt(""); }} style={{
-          padding: "6px 8px", background: "transparent", border: "1px solid #1e293b",
-          borderRadius: "5px", color: "#475569", fontSize: "10px", cursor: "pointer",
+        <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{
+          padding: "7px 9px", background: "transparent", border: "1px solid #1e293b",
+          borderRadius: "6px", color: "#475569", fontSize: "11px", cursor: "pointer",
         }}>✕</button>
       </div>
     </div>
@@ -354,9 +346,10 @@ function SwapPrompt({ color, swapping, onSwap }) {
 
 function StaticMealCard({ meal, color, onSwap, swapping, kept, onToggleKeep }) {
   const [open, setOpen] = useState(false);
+  const [showSwap, setShowSwap] = useState(false);
   return (
-    <div style={{ background: kept ? `${color}08` : "rgba(255,255,255,0.02)", border: `1px solid ${kept ? color + "60" : open ? color : "#1e293b"}`, borderRadius: "6px", marginBottom: "4px", overflow: "hidden" }}>
-      <div onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }} style={{ padding: "8px 10px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
+    <div style={{ background: kept ? `${color}08` : "rgba(255,255,255,0.02)", border: `1px solid ${kept ? color + "60" : (open || showSwap) ? color : "#1e293b"}`, borderRadius: "6px", marginBottom: "4px", overflow: "hidden" }}>
+      <div onClick={(e) => { e.stopPropagation(); if (!showSwap) setOpen(o => !o); }} style={{ padding: "8px 10px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <button onClick={(e) => { e.stopPropagation(); onToggleKeep && onToggleKeep(); }} style={{
             background: kept ? color : "transparent", border: `1px solid ${kept ? color : "#334155"}`,
@@ -367,10 +360,20 @@ function StaticMealCard({ meal, color, onSwap, swapping, kept, onToggleKeep }) {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span style={{ fontSize: "9px", color: "#475569" }}>P:{meal.p} C:{meal.c} F:{meal.f}</span>
-          {!kept && <SwapPrompt color={color} swapping={swapping} onSwap={(p) => onSwap && onSwap(p)} />}
+          {!kept && (
+            swapping
+              ? <span style={{ fontSize: "10px", color: "#475569" }}>…</span>
+              : <button onClick={(e) => { e.stopPropagation(); setShowSwap(s => !s); setOpen(false); }} style={{
+                  background: showSwap ? `${color}20` : "transparent", border: `1px solid ${color}40`, borderRadius: "4px",
+                  color, fontSize: "10px", cursor: "pointer", padding: "1px 6px",
+                  fontFamily: "'Courier New', monospace", lineHeight: 1.4,
+                }}>↻</button>
+          )}
           <span style={{ fontSize: "10px", color: "#334155" }}>{open ? "▲" : "▼"}</span>
         </div>
       </div>
+      {showSwap && <SwapPanel color={color} onSwap={(p) => { onSwap && onSwap(p); setShowSwap(false); }} onClose={() => setShowSwap(false)} />}
+      {showSwap && <SwapPanel color={color} onSwap={(p) => { onSwap && onSwap(p); setShowSwap(false); }} onClose={() => setShowSwap(false)} />}
       {open && (
         <div style={{ padding: "0 10px 10px", borderTop: "1px solid #1e293b" }}>
           <div style={{ fontSize: "11px", color: "#94a3b8", lineHeight: 1.6, marginTop: "8px" }}>{meal.food}</div>
@@ -390,9 +393,10 @@ function StaticMealCard({ meal, color, onSwap, swapping, kept, onToggleKeep }) {
 
 function RecipeCard({ recipe, color, mealLabel, onSwap, swapping, kept, onToggleKeep }) {
   const [open, setOpen] = useState(false);
+  const [showSwap, setShowSwap] = useState(false);
   return (
-    <div style={{ background: kept ? `${color}08` : "rgba(255,255,255,0.02)", border: `1px solid ${kept ? color + "60" : open ? color : "#1e293b"}`, borderRadius: "6px", marginBottom: "4px", overflow: "hidden" }}>
-      <div onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }} style={{ padding: "8px 10px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "6px" }}>
+    <div style={{ background: kept ? `${color}08` : "rgba(255,255,255,0.02)", border: `1px solid ${kept ? color + "60" : (open || showSwap) ? color : "#1e293b"}`, borderRadius: "6px", marginBottom: "4px", overflow: "hidden" }}>
+      <div onClick={(e) => { e.stopPropagation(); if (!showSwap) setOpen(o => !o); }} style={{ padding: "8px 10px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "6px" }}>
         <div style={{ flex: 1 }}>
           {mealLabel && <div style={{ fontSize: "9px", color, letterSpacing: "1px", marginBottom: "2px" }}>{mealLabel.toUpperCase()}</div>}
           <div style={{ fontSize: "11px", fontWeight: "bold", color: "#e2e8f0" }}>{recipe.name}</div>
@@ -409,7 +413,15 @@ function RecipeCard({ recipe, color, mealLabel, onSwap, swapping, kept, onToggle
             borderRadius: "3px", color: kept ? "#000" : "#334155", fontSize: "9px",
             cursor: "pointer", padding: "1px 5px", fontFamily: "'Courier New', monospace", lineHeight: 1.4,
           }}>{kept ? "🔒" : "🔓"}</button>
-          {onSwap && !kept && <SwapPrompt color={color} swapping={swapping} onSwap={(p) => onSwap && onSwap(p)} />}
+          {onSwap && !kept && (
+            swapping
+              ? <span style={{ fontSize: "10px", color: "#475569" }}>…</span>
+              : <button onClick={(e) => { e.stopPropagation(); setShowSwap(s => !s); setOpen(false); }} style={{
+                  background: showSwap ? `${color}20` : "transparent", border: `1px solid ${color}40`, borderRadius: "4px",
+                  color, fontSize: "10px", cursor: "pointer", padding: "1px 6px",
+                  fontFamily: "'Courier New', monospace", lineHeight: 1.4,
+                }}>↻</button>
+          )}
           <span style={{ fontSize: "10px", color: "#334155" }}>{open ? "▲" : "▼"}</span>
         </div>
       </div>
