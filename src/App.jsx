@@ -821,7 +821,8 @@ export default function DayByDayPlan() {
                             const data = await res.json();
                             const text = data.choices?.[0]?.message?.content || "";
                             const newMeal = JSON.parse(text.replace(/```json|```/g, "").trim());
-                            // If we have recipes already, swap that meal; otherwise create a recipes object from static meals + swap
+                            // Force meal field to exactly match mealName so lookup always works
+                            newMeal.meal = mealName;
                             setDayRecipes(p => {
                               const existing = p[dayKey];
                               const baseMeals = existing ? existing.meals : (macroData[day.macroDay] || macroData["hard"]).meals.map(m => ({
@@ -829,9 +830,14 @@ export default function DayByDayPlan() {
                                 macros: { kcal: (m.p*4 + m.c*4 + m.f*9), protein: m.p, carbs: m.c, fat: m.f },
                                 ingredients: [m.food], method: ["Prepare as described."]
                               }));
-                              return { ...p, [dayKey]: { meals: baseMeals.map(m => m.meal === mealName ? newMeal : m) }};
+                              // Match by meal name case-insensitively
+                              return { ...p, [dayKey]: { meals: baseMeals.map(m =>
+                                (m.meal || "").toLowerCase() === mealName.toLowerCase() ? newMeal : m
+                              )}};
                             });
-                          } catch(err) { /* silent */ }
+                          } catch(err) {
+                            setDayRecipeError(p => ({ ...p, [dayKey]: err.message || "Swap failed." }));
+                          }
                           setDaySwappingMeal(p => ({ ...p, [dayKey]: null }));
                         }}
                       />}
