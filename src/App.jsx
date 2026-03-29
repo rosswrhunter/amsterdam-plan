@@ -383,7 +383,6 @@ function StaticMealCard({ meal, color, onSwap, swapping, kept, onToggleKeep, onL
         </div>
       </div>
       {showSwap && <SwapPanel color={color} onSwap={(p) => { onSwap && onSwap(p); setShowSwap(false); }} onClose={() => setShowSwap(false)} />}
-      {showLog && <MealLogPanel mealName={mealLabel || "Meal"} entry={logEntry} color={color} onSave={(e) => { onLog && onLog(e); if (e) setShowLog(false); }} onClose={() => setShowLog(false)} />}
       {showLog && <MealLogPanel mealName={meal.meal} entry={logEntry} color={color} onSave={(e) => { onLog && onLog(e); if (e) setShowLog(false); }} onClose={() => setShowLog(false)} />}
       {open && (
         <div style={{ padding: "0 10px 10px", borderTop: "1px solid #1e293b" }}>
@@ -448,7 +447,6 @@ function RecipeCard({ recipe, color, mealLabel, onSwap, swapping, kept, onToggle
       </div>
       {showSwap && <SwapPanel color={color} onSwap={(p) => { onSwap && onSwap(p); setShowSwap(false); }} onClose={() => setShowSwap(false)} />}
       {showLog && <MealLogPanel mealName={mealLabel || "Meal"} entry={logEntry} color={color} onSave={(e) => { onLog && onLog(e); if (e) setShowLog(false); }} onClose={() => setShowLog(false)} />}
-      {showLog && <MealLogPanel mealName={meal.meal} entry={logEntry} color={color} onSave={(e) => { onLog && onLog(e); if (e) setShowLog(false); }} onClose={() => setShowLog(false)} />}
       {open && (
         <div style={{ padding: "0 11px 11px", borderTop: "1px solid #1e293b" }}>
           <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "2px", margin: "8px 0 4px" }}>INGREDIENTS</div>
