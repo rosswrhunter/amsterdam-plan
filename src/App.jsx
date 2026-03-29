@@ -306,38 +306,39 @@ const SWAP_SUGGESTIONS = ["Asian", "Spanish", "Mexican", "Italian", "High protei
 function SwapPanel({ color, onSwap, onClose }) {
   const [prompt, setPrompt] = useState("");
   return (
-    <div onClick={e => e.stopPropagation()} style={{ padding: "10px 10px 10px", borderTop: "1px solid #1e293b", background: "rgba(0,0,0,0.2)" }}>
-      <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "1px", marginBottom: "7px" }}>What do you fancy?</div>
-      <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "8px" }}>
+    <div onClick={e => e.stopPropagation()} style={{ padding: "12px", borderTop: `1px solid ${color}30`, background: "rgba(0,0,0,0.3)" }}>
+      <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "1px", marginBottom: "8px" }}>What do you fancy?</div>
+      <div style={{ display: "flex", gap: "5px", flexWrap: "wrap", marginBottom: "10px" }}>
         {SWAP_SUGGESTIONS.map(s => (
           <button key={s} onClick={(e) => { e.stopPropagation(); setPrompt(p => p === s ? "" : s); }} style={{
-            padding: "3px 9px", border: `1px solid ${prompt === s ? color : "#1e293b"}`,
-            borderRadius: "12px", background: prompt === s ? `${color}20` : "transparent",
-            color: prompt === s ? color : "#475569", fontSize: "9px", cursor: "pointer",
+            padding: "5px 10px", border: `1px solid ${prompt === s ? color : "#1e293b"}`,
+            borderRadius: "20px", background: prompt === s ? `${color}25` : "transparent",
+            color: prompt === s ? color : "#475569", fontSize: "10px", cursor: "pointer",
             fontFamily: "'Courier New', monospace",
           }}>{s}</button>
         ))}
       </div>
-      <div style={{ display: "flex", gap: "6px" }}>
-        <input
-          value={prompt}
-          onChange={e => setPrompt(e.target.value)}
-          onClick={e => e.stopPropagation()}
-          placeholder="e.g. leftover prawns, something cold…"
-          style={{
-            flex: 1, padding: "7px 9px", background: "rgba(255,255,255,0.04)",
-            border: `1px solid #1e293b`, borderRadius: "6px", color: "#e2e8f0",
-            fontSize: "10px", fontFamily: "'Courier New', monospace", outline: "none",
-          }}
-        />
+      <input
+        value={prompt}
+        onChange={e => setPrompt(e.target.value)}
+        onClick={e => e.stopPropagation()}
+        placeholder="or type anything… e.g. leftover prawns"
+        style={{
+          width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.05)",
+          border: `1px solid #1e293b`, borderRadius: "8px", color: "#e2e8f0",
+          fontSize: "12px", fontFamily: "'Courier New', monospace", outline: "none",
+          boxSizing: "border-box", marginBottom: "8px",
+        }}
+      />
+      <div style={{ display: "flex", gap: "8px" }}>
         <button onClick={(e) => { e.stopPropagation(); onSwap(prompt); }} style={{
-          padding: "7px 12px", background: `${color}25`, border: `1px solid ${color}`,
-          borderRadius: "6px", color, fontSize: "11px", cursor: "pointer",
-          fontFamily: "'Courier New', monospace", fontWeight: "bold",
-        }}>GO</button>
+          flex: 1, padding: "10px", background: `${color}25`, border: `1px solid ${color}`,
+          borderRadius: "8px", color, fontSize: "12px", cursor: "pointer",
+          fontFamily: "'Courier New', monospace", fontWeight: "bold", letterSpacing: "1px",
+        }}>✦ GENERATE</button>
         <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{
-          padding: "7px 9px", background: "transparent", border: "1px solid #1e293b",
-          borderRadius: "6px", color: "#475569", fontSize: "11px", cursor: "pointer",
+          padding: "10px 14px", background: "transparent", border: "1px solid #1e293b",
+          borderRadius: "8px", color: "#475569", fontSize: "12px", cursor: "pointer",
         }}>✕</button>
       </div>
     </div>
@@ -425,6 +426,7 @@ function RecipeCard({ recipe, color, mealLabel, onSwap, swapping, kept, onToggle
           <span style={{ fontSize: "10px", color: "#334155" }}>{open ? "▲" : "▼"}</span>
         </div>
       </div>
+      {showSwap && <SwapPanel color={color} onSwap={(p) => { onSwap && onSwap(p); setShowSwap(false); }} onClose={() => setShowSwap(false)} />}
       {open && (
         <div style={{ padding: "0 11px 11px", borderTop: "1px solid #1e293b" }}>
           <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "2px", margin: "8px 0 4px" }}>INGREDIENTS</div>
