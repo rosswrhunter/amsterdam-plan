@@ -337,9 +337,9 @@ function RecipeCard({ recipe, color, mealLabel, onSwap, swapping }) {
   );
 }
 
-function MacroPanel({ macroDay, fueling, km, recipes, loadingRecipes, recipeError, onGenerateRecipes, onSwapMeal, swappingMeal }) {
+function MacroPanel({ macroDay, fueling, km, phase, recipes, loadingRecipes, recipeError, onGenerateRecipes, onSwapMeal, swappingMeal }) {
   const m = macroData[macroDay] || macroData["hard"];
-  const dyn = calcDayMacros(macroDay, km);
+  const dyn = calcDayMacros(macroDay, km, phase);
   const color = m.color;
 
   return (
@@ -509,21 +509,24 @@ const macroColor = { hard: "#f97316", easy: "#60a5fa", active: "#4ade80", rest: 
 // At 90kg: ~90 kcal/km easy, ~100 kcal/km tempo/intervals (higher intensity)
 // Resting TDEE base: ~2200/day (excludes active calories)
 // Dog walks add ~300 kcal daily regardless
-export function calcDayMacros(macroDay, km) {
+export function calcDayMacros(macroDay, km, phase) {
   const base = 2200; // resting metabolic
   const walks = 300; // daily dog walks always
   const kcalPerKm = (macroDay === "hard") ? 100 : 90; // intensity factor
   const runBurn = Math.round((km || 0) * kcalPerKm);
   const totalBurn = base + walks + runBurn;
 
-  // Deficit: 400-500 on easy/rest days, 0 deficit on long runs (fuel fully), small deficit otherwise
+  // BASE phase (Apr–May): aggressive deficit on low-intensity days to maximise fat loss
+  // BUILD/PEAK/TAPER: standard deficit — performance takes priority
+  const isBase = phase === "BASE";
+
   let deficit = 0;
-  if (macroDay === "longrun") deficit = 200; // barely deficit on long run, body needs fuel
-  else if (macroDay === "preload") deficit = 300;
-  else if (macroDay === "hard") deficit = 400;
-  else if (macroDay === "easy") deficit = 450;
-  else if (macroDay === "active") deficit = 400;
-  else deficit = 500; // rest day
+  if (macroDay === "longrun")       deficit = 200;                  // always fuel long runs
+  else if (macroDay === "preload")  deficit = isBase ? 350 : 300;   // modest — eating for tomorrow
+  else if (macroDay === "hard")     deficit = isBase ? 500 : 400;   // tempo OK to cut a bit more
+  else if (macroDay === "easy")     deficit = isBase ? 650 : 450;   // big cut on easy days in BASE
+  else if (macroDay === "active")   deficit = isBase ? 600 : 400;   // pilates/strength — cut hard
+  else                              deficit = isBase ? 700 : 500;   // rest day: maximum deficit
 
   const eatKcal = Math.max(1800, totalBurn - deficit);
 
@@ -682,7 +685,7 @@ export default function DayByDayPlan() {
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
                               <div style={{ fontSize: "9px", color: mc, background: `${mc}18`, padding: "2px 6px", borderRadius: "4px" }}>
-                                {calcDayMacros(day.macroDay, day.km).kcal.toLocaleString()} kcal
+                                {calcDayMacros(day.macroDay, day.km, day.phase?.name).kcal.toLocaleString()} kcal
                               </div>
                               <div style={{ fontSize: "10px", color: "#334155" }}>{isOpen ? "▲" : "▼"}</div>
                             </div>
@@ -698,6 +701,7 @@ export default function DayByDayPlan() {
                         macroDay={day.macroDay}
                         fueling={day.fueling}
                         km={day.km}
+                        phase={day.phase?.name}
                         recipes={dayRecipes[dayKey] || null}
                         loadingRecipes={!!dayRecipeLoading[dayKey]}
                         recipeError={dayRecipeError[dayKey] || null}

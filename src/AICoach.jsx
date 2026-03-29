@@ -8,7 +8,7 @@ function getDayByDate(allDays, date) {
 
 function formatDayContext(day, calcDayMacros, label) {
   if (!day) return `${label}: outside plan range`;
-  const macros = calcDayMacros(day.macroDay, day.km);
+  const macros = calcDayMacros(day.macroDay, day.km, day.phase?.name);
   const parts = [
     `${label} (${day.date.toDateString()}):`,
     `  Session: ${day.type} — ${day.detail}`,
@@ -102,7 +102,7 @@ export default function AICoach({ memory, workoutLog, allDays, calcDayMacros }) 
 
     const liveCtx = allDays && calcDayMacros ? (() => {
       const planLines = allDays.map(day => {
-        const m = calcDayMacros(day.macroDay, day.km);
+        const m = calcDayMacros(day.macroDay, day.km, day.phase?.name);
         const dateStr = day.date.toISOString().split("T")[0];
         const dow = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][day.date.getDay()];
         return `${dateStr} ${dow} [${day.phase.name}] ${day.type}${day.km ? " "+day.km+"km" : ""} | eat:${m.kcal}kcal P:${m.protein}g C:${m.carbs}g F:${m.fat}g | burn:~${m.burn}kcal${day.fueling ? " | fueling:"+day.fueling : ""}`;
