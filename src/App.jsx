@@ -377,7 +377,7 @@ function MacroPanel({ macroDay, fueling, km, phase, recipes, loadingRecipes, rec
             <MacroBar value={bar.value} max={bar.max} color={bar.color} />
           </div>
         ))}
-        <div style={{ fontSize: "9px", color: "#334155", marginTop: "6px", lineHeight: 1.4 }}>💡 {m.note}</div>
+        <div style={{ fontSize: "9px", color: "#334155", marginTop: "6px", lineHeight: 1.4 }}>💡 Burns ~{dyn.burn.toLocaleString()} kcal · deficit ~{dyn.deficit} kcal · {macroDay === "longrun" || macroDay === "preload" ? "Fuel well — high volume day." : macroDay === "rest" ? "Rest day: keep carbs low, protein high." : "Whole foods, hit protein first."}</div>
       </div>
 
       {/* Meals */}
@@ -530,17 +530,17 @@ export function calcDayMacros(macroDay, km, phase) {
 
   const eatKcal = Math.max(1800, totalBurn - deficit);
 
-  // Macro split: carbs scale with km, protein always 155g, fat fills rest
+  // Protein: always 155g (620 kcal)
   const proteinG = 155;
   const proteinKcal = proteinG * 4;
 
-  // Carbs: base 120g + 8g per km (more carbs for harder/longer sessions)
-  const carbsG = Math.round(Math.min(550, 120 + (km || 0) * 8));
-  const carbsKcal = carbsG * 4;
+  // Fat: capped at sensible levels — not a fat-loss lever, just enough for hormones/satiety
+  const fatG = macroDay === "longrun" ? 85 : macroDay === "hard" ? 80 : 70;
+  const fatKcal = fatG * 9;
 
-  // Fat fills remaining
-  const fatKcal = Math.max(200, eatKcal - proteinKcal - carbsKcal);
-  const fatG = Math.round(fatKcal / 9);
+  // Carbs: fill remaining calories after protein and fat
+  const carbsKcal = Math.max(0, eatKcal - proteinKcal - fatKcal);
+  const carbsG = Math.round(carbsKcal / 4);
 
   return {
     kcal: Math.round(eatKcal),
