@@ -383,7 +383,7 @@ function StaticMealCard({ meal, color, onSwap, swapping, kept, onToggleKeep, onL
         </div>
       </div>
       {showSwap && <SwapPanel color={color} onSwap={(p) => { onSwap && onSwap(p); setShowSwap(false); }} onClose={() => setShowSwap(false)} />}
-      {showLog && <MealLogPanel mealName={meal.meal} entry={logEntry} color={color} onSave={(e) => { onLog && onLog(e); if (e) setShowLog(false); }} onClose={() => setShowLog(false)} />}
+      {showLog && <MealLogPanel mealName={meal.meal} entry={logEntry} color={color} plannedMeal={meal} onSave={(e) => { onLog && onLog(e); if (e) setShowLog(false); }} onClose={() => setShowLog(false)} />}
       {open && (
         <div style={{ padding: "0 10px 10px", borderTop: "1px solid #1e293b" }}>
           <div style={{ fontSize: "11px", color: "#94a3b8", lineHeight: 1.6, marginTop: "8px" }}>{meal.food}</div>
@@ -446,7 +446,7 @@ function RecipeCard({ recipe, color, mealLabel, onSwap, swapping, kept, onToggle
         </div>
       </div>
       {showSwap && <SwapPanel color={color} onSwap={(p) => { onSwap && onSwap(p); setShowSwap(false); }} onClose={() => setShowSwap(false)} />}
-      {showLog && <MealLogPanel mealName={mealLabel || "Meal"} entry={logEntry} color={color} onSave={(e) => { onLog && onLog(e); if (e) setShowLog(false); }} onClose={() => setShowLog(false)} />}
+      {showLog && <MealLogPanel mealName={mealLabel || "Meal"} entry={logEntry} color={color} plannedMeal={recipe} onSave={(e) => { onLog && onLog(e); if (e) setShowLog(false); }} onClose={() => setShowLog(false)} />}
       {open && (
         <div style={{ padding: "0 11px 11px", borderTop: "1px solid #1e293b" }}>
           <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "2px", margin: "8px 0 4px" }}>INGREDIENTS</div>
@@ -496,11 +496,26 @@ async function analyseMacros({ text, imageB64, mealName }) {
 }
 
 // Inline log panel that opens inside each meal card
-function MealLogPanel({ mealName, entry, onSave, onClose, color }) {
+function MealLogPanel({ mealName, entry, onSave, onClose, color, plannedMeal }) {
   const [mode, setMode] = useState("text"); // "text" | "photo"
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  function logPlanned() {
+    const p = plannedMeal?.p ?? plannedMeal?.macros?.protein ?? 0;
+    const c = plannedMeal?.c ?? plannedMeal?.macros?.carbs ?? 0;
+    const f = plannedMeal?.f ?? plannedMeal?.macros?.fat ?? 0;
+    const food = plannedMeal?.food || plannedMeal?.name || mealName;
+    onSave({
+      meal: mealName, source: "planned",
+      description: food,
+      kcal: Math.round(p*4 + c*4 + f*9),
+      protein: p, carbs: c, fat: f,
+      confidence: "high",
+      timestamp: Date.now(),
+    });
+  }
 
   async function submitText() {
     if (!input.trim()) return;
@@ -546,9 +561,23 @@ function MealLogPanel({ mealName, entry, onSave, onClose, color }) {
 
       {!entry && (
         <>
+          {/* I had this — instant log from planned meal */}
+          {plannedMeal && (
+            <button onClick={logPlanned} style={{
+              width: "100%", padding: "10px 12px", marginBottom: "8px",
+              background: `${color}18`, border: `1px solid ${color}`,
+              borderRadius: "7px", color, fontSize: "11px", cursor: "pointer",
+              fontFamily: "'Courier New', monospace", fontWeight: "bold", textAlign: "left",
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px",
+            }}>
+              <span>✓ I had this</span>
+              <span style={{ fontSize: "9px", opacity: 0.7, fontWeight: "normal" }}>{plannedMeal.food || plannedMeal.name}</span>
+            </button>
+          )}
+
           {/* Mode toggle */}
           <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
-            {[["text","✏️ Type what you ate"],["photo","📷 Photo"]].map(([m, label]) => (
+            {[["text","✏️ Type what I ate"],["photo","📷 Photo"]].map(([m, label]) => (
               <button key={m} onClick={() => setMode(m)} style={{
                 flex: 1, padding: "7px", border: `1px solid ${mode === m ? color : "#1e293b"}`,
                 borderRadius: "6px", background: mode === m ? `${color}18` : "transparent",
