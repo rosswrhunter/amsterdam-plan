@@ -302,6 +302,7 @@ function MacroPanel({ macroDay, fueling, km }) {
   const color = m.color;
   const [recipes, setRecipes] = useState(null);
   const [loadingRecipes, setLoadingRecipes] = useState(false);
+  const [recipeError, setRecipeError] = useState(null);
 
   return (
     <div style={{ marginTop: "10px", borderTop: `1px solid ${color}30`, paddingTop: "10px" }}>
@@ -363,8 +364,13 @@ function MacroPanel({ macroDay, fueling, km }) {
             e.stopPropagation();
             if (recipes) { setRecipes(null); return; }
             setLoadingRecipes(true);
-            try { const r = await generateDayRecipes(macroDay); setRecipes(r); }
-            catch (err) { /* silent */ }
+            setRecipeError(null);
+            try {
+              const r = await generateDayRecipes(macroDay);
+              setRecipes(r);
+            } catch (err) {
+              setRecipeError(err.message || "Failed to generate. Try again.");
+            }
             setLoadingRecipes(false);
           }}
           disabled={loadingRecipes}
@@ -378,6 +384,12 @@ function MacroPanel({ macroDay, fueling, km }) {
           }}>
           {loadingRecipes ? "GENERATING RECIPES…" : recipes ? "✕ HIDE RECIPES" : "🍳 GENERATE DAY RECIPES"}
         </button>
+
+        {recipeError && (
+          <div onClick={e => e.stopPropagation()} style={{ marginTop: "8px", background: "rgba(239,68,68,0.08)", border: "1px solid #ef444430", borderRadius: "6px", padding: "8px 10px", fontSize: "10px", color: "#ef4444" }}>
+            ⚠ {recipeError}
+          </div>
+        )}
 
         {recipes && (
           <div style={{ marginTop: "10px" }}>
