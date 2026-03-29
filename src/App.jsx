@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 
 const RACE_DATE = new Date(2026, 9, 18);
-const START_DATE = new Date(2026, 2, 30);
+const START_DATE = new Date(2026, 2, 28);
 
 const phases = [
-  { name: "BASE",  color: "#4ade80", start: new Date(2026,2,30), end: new Date(2026,4,25) },
+  { name: "BASE",  color: "#4ade80", start: new Date(2026,2,28), end: new Date(2026,4,25) },
   { name: "BUILD", color: "#facc15", start: new Date(2026,4,26), end: new Date(2026,6,20) },
   { name: "PEAK",  color: "#f97316", start: new Date(2026,6,21), end: new Date(2026,8,14) },
   { name: "TAPER", color: "#818cf8", start: new Date(2026,8,15), end: new Date(2026,9,18) },
@@ -611,7 +611,7 @@ export default function DayByDayPlan() {
         zIndex: 10,
       }}>
         <div style={{ fontSize: "10px", color: "#475569", letterSpacing: "1px", marginBottom: "8px" }}>
-          30 Mar → 18 Oct · {allDays.length} days · Tap any day for nutrition
+          28 Mar → 18 Oct · {allDays.length} days · Tap any day for nutrition
         </div>
         <div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "2px", WebkitOverflowScrolling: "touch" }}>
           {["ALL","BASE","BUILD","PEAK","TAPER"].map(f => {
