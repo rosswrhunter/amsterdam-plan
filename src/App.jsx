@@ -217,18 +217,37 @@ function MacroBar({ value, max, color }) {
   );
 }
 
-function MacroPanel({ macroDay, fueling }) {
-  const m = macroData[macroDay];
+function MacroPanel({ macroDay, fueling, km }) {
+  const m = macroData[macroDay] || macroData["hard"];
+  const dyn = calcDayMacros(macroDay, km);
+  const color = m.color;
+
   return (
-    <div style={{ marginTop: "10px", borderTop: `1px solid ${m.color}30`, paddingTop: "10px" }}>
-      {/* Macro bars */}
-      <div style={{ background: `${m.color}10`, border: `1px solid ${m.color}25`, borderRadius: "8px", padding: "10px 12px", marginBottom: "8px" }}>
-        <div style={{ fontSize: "9px", color: m.color, letterSpacing: "2px", marginBottom: "8px" }}>{m.label.toUpperCase()} · {m.note}</div>
+    <div style={{ marginTop: "10px", borderTop: `1px solid ${color}30`, paddingTop: "10px" }}>
+      {/* Burn vs Eat summary */}
+      <div style={{ background: `${color}10`, border: `1px solid ${color}25`, borderRadius: "8px", padding: "10px 12px", marginBottom: "8px" }}>
+        <div style={{ fontSize: "9px", color: color, letterSpacing: "2px", marginBottom: "10px" }}>{m.label.toUpperCase()}{km ? ` · ${km}km` : ""}</div>
+
+        {/* Burn breakdown */}
+        <div style={{ display: "flex", gap: "6px", marginBottom: "10px", flexWrap: "wrap" }}>
+          {[
+            { label: "RUN BURN", value: dyn.runBurn > 0 ? `~${dyn.runBurn} kcal` : "—", color: color },
+            { label: "RESTING", value: "~2,500 kcal", color: "#475569" },
+            { label: "TOTAL BURN", value: `~${dyn.burn.toLocaleString()} kcal`, color: "#e2e8f0" },
+            { label: "EAT", value: `${dyn.kcal.toLocaleString()} kcal`, color: "#4ade80" },
+          ].map(s => (
+            <div key={s.label} style={{ background: "rgba(0,0,0,0.2)", borderRadius: "5px", padding: "5px 8px", minWidth: "80px" }}>
+              <div style={{ fontSize: "8px", color: "#475569", letterSpacing: "1px" }}>{s.label}</div>
+              <div style={{ fontSize: "11px", fontWeight: "bold", color: s.color, marginTop: "1px" }}>{s.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Macro bars */}
         {[
-          { name: "KCAL", value: m.kcal, unit: "", max: 3000, color: m.color },
-          { name: "PROTEIN", value: m.protein, unit: "g", max: 200, color: "#60a5fa" },
-          { name: "CARBS", value: m.carbs, unit: "g", max: 400, color: "#facc15" },
-          { name: "FAT", value: m.fat, unit: "g", max: 120, color: "#f97316" },
+          { name: "PROTEIN", value: dyn.protein, unit: "g", max: 200, color: "#60a5fa" },
+          { name: "CARBS", value: dyn.carbs, unit: "g", max: 550, color: "#facc15" },
+          { name: "FAT", value: dyn.fat, unit: "g", max: 130, color: "#f97316" },
         ].map(bar => (
           <div key={bar.name} style={{ marginBottom: "7px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
@@ -238,14 +257,16 @@ function MacroPanel({ macroDay, fueling }) {
             <MacroBar value={bar.value} max={bar.max} color={bar.color} />
           </div>
         ))}
+        <div style={{ fontSize: "9px", color: "#334155", marginTop: "6px", lineHeight: 1.4 }}>💡 {m.note}</div>
       </div>
+
       {/* Meals */}
       <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "2px", marginBottom: "6px" }}>MEALS</div>
       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
         {m.meals.map(meal => (
           <div key={meal.meal} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid #1e293b", borderRadius: "6px", padding: "7px 10px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
-              <span style={{ fontSize: "9px", color: m.color, letterSpacing: "1px" }}>{meal.meal.toUpperCase()}</span>
+              <span style={{ fontSize: "9px", color, letterSpacing: "1px" }}>{meal.meal.toUpperCase()}</span>
               <span style={{ fontSize: "9px", color: "#475569" }}>P:{meal.p} C:{meal.c} F:{meal.f}</span>
             </div>
             <div style={{ fontSize: "10px", color: "#94a3b8" }}>{meal.food}</div>
@@ -268,7 +289,7 @@ function getWeekInPhase(date, phase) {
 
 function getDayActivity(date, phase, weekInPhase) {
   if (date.toDateString() === RACE_DATE.toDateString()) {
-    return { type: "RACE DAY 🏅", detail: "Amsterdam Marathon! Start conservative 5:50/km. Race hard from 30km.", icon: "🏅", macroDay: "hard", preferred: true, fueling: "race" };
+    return { type: "RACE DAY 🏅", detail: "Amsterdam Marathon! Start conservative 5:50/km. Race hard from 30km.", icon: "🏅", macroDay: "longrun", preferred: true, fueling: "race", km: 42 };
   }
   const dow = date.getDay();
   const progress = Math.min(weekInPhase / 7, 1);
@@ -278,13 +299,13 @@ function getDayActivity(date, phase, weekInPhase) {
     const easyKm = Math.round(8 + progress * 2);
     const friKm  = Math.round(6 + progress * 2);
     switch(dow) {
-      case 1: return { type: "Easy Run", detail: `${easyKm}km @ 6:30–6:45/km Zone 2`, icon: "🏃", macroDay: "easy", preferred: true, fueling: easyKm >= 10 ? "easy_long" : null };
-      case 2: return { type: "Rest / Walk", detail: "10,000 steps. Mobility & stretching.", icon: "🚶", macroDay: "rest", preferred: false };
-      case 3: return { type: "Tempo", detail: "10km: 2km warm up + 5km @ 5:25–5:30/km + cooldown", icon: "⚡", macroDay: "hard", preferred: true, fueling: "tempo" };
-      case 4: return { type: "Strength", detail: "Optional: 30min — glutes, single-leg, core", icon: "💪", macroDay: "active", preferred: false };
-      case 5: return { type: "Strength + Easy", detail: `45min strength + ${friKm}km easy @ 6:40/km`, icon: "🏋️", macroDay: "preload", preferred: true };
-      case 6: return { type: "Long Run", detail: `${longKm}km @ 6:20–6:30/km easy`, icon: "🌅", macroDay: "longrun", preferred: true, fueling: "long_base" };
-      case 0: return { type: "Reformer Pilates", detail: "Full class. Glutes, hip flexors, core.", icon: "🧘", macroDay: "active", preferred: true };
+      case 1: return { type: "Easy Run", detail: `${easyKm}km @ 6:30–6:45/km Zone 2`, icon: "🏃", macroDay: "easy", preferred: true, fueling: easyKm >= 10 ? "easy_long" : null, km: easyKm };
+      case 2: return { type: "Rest / Walk", detail: "10,000 steps. Mobility & stretching.", icon: "🚶", macroDay: "rest", preferred: false, km: 0 };
+      case 3: return { type: "Tempo", detail: "10km: 2km warm up + 5km @ 5:25–5:30/km + cooldown", icon: "⚡", macroDay: "hard", preferred: true, fueling: "tempo", km: 10 };
+      case 4: return { type: "Strength", detail: "Optional: 30min — glutes, single-leg, core", icon: "💪", macroDay: "active", preferred: false, km: 0 };
+      case 5: return { type: "Strength + Easy", detail: `45min strength + ${friKm}km easy @ 6:40/km`, icon: "🏋️", macroDay: "preload", preferred: true, km: friKm };
+      case 6: return { type: "Long Run", detail: `${longKm}km @ 6:20–6:30/km easy`, icon: "🌅", macroDay: "longrun", preferred: true, fueling: "long_base", km: longKm };
+      case 0: return { type: "Reformer Pilates", detail: "Full class. Glutes, hip flexors, core.", icon: "🧘", macroDay: "active", preferred: true, km: 0 };
     }
   }
   if (phase.name === "BUILD") {
@@ -293,26 +314,26 @@ function getDayActivity(date, phase, weekInPhase) {
     const mpKm   = Math.round(5 + progress * 3);
     const totalMp = Math.round(10 + progress * 4);
     switch(dow) {
-      case 1: return { type: "Easy Run", detail: `${easyKm}km @ 6:20–6:30/km Zone 2`, icon: "🏃", macroDay: "easy", preferred: true };
-      case 2: return { type: "Rest / Optional", detail: "Easy 6km if Body Battery >60, otherwise rest", icon: "🚶", macroDay: "rest", preferred: false };
-      case 3: return { type: "Threshold", detail: "14km: warm up + 3×3km @ 5:20/km (90s rest) + cooldown", icon: "⚡", macroDay: "hard", preferred: true, fueling: "tempo" };
-      case 4: return { type: "Strength", detail: "Strength — single-leg, core, glutes", icon: "💪", macroDay: "active", preferred: false };
-      case 5: return { type: "Marathon Pace", detail: `${totalMp}km with ${mpKm}km @ 5:41/km in the middle`, icon: "🎯", macroDay: "preload", preferred: true, fueling: "marathon_pace" };
+      case 1: return { type: "Easy Run", detail: `${easyKm}km @ 6:20–6:30/km Zone 2`, icon: "🏃", macroDay: "easy", preferred: true, km: easyKm };
+      case 2: return { type: "Rest / Optional", detail: "Easy 6km if Body Battery >60, otherwise rest", icon: "🚶", macroDay: "rest", preferred: false, km: 0 };
+      case 3: return { type: "Threshold", detail: "14km: warm up + 3×3km @ 5:20/km (90s rest) + cooldown", icon: "⚡", macroDay: "hard", preferred: true, fueling: "tempo", km: 14 };
+      case 4: return { type: "Strength", detail: "Strength — single-leg, core, glutes", icon: "💪", macroDay: "active", preferred: false, km: 0 };
+      case 5: return { type: "Marathon Pace", detail: `${totalMp}km with ${mpKm}km @ 5:41/km in the middle`, icon: "🎯", macroDay: "preload", preferred: true, fueling: "marathon_pace", km: totalMp };
       case 6: return { type: "Long Run", detail: `${longKm}km @ 6:15–6:25/km, last 5km @ 5:50/km`, icon: "🌅", macroDay: "longrun", preferred: true, fueling: "long_build" };
-      case 0: return { type: "Reformer Pilates", detail: "Full class. Essential after Saturday long run.", icon: "🧘", macroDay: "active", preferred: true };
+      case 0: return { type: "Reformer Pilates", detail: "Full class. Essential after Saturday long run.", icon: "🧘", macroDay: "active", preferred: true, km: 0 };
     }
   }
   if (phase.name === "PEAK") {
     const longKm = Math.min(28 + Math.round(progress * 4), 32);
     const mpKm   = Math.round(8 + progress * 4);
     switch(dow) {
-      case 1: return { type: "Easy Run", detail: "12km @ 6:20/km Zone 2", icon: "🏃", macroDay: "easy", preferred: true };
-      case 2: return { type: "Optional Easy", detail: "8km easy or rest. Check Body Battery first.", icon: "🚶", macroDay: "rest", preferred: false };
-      case 3: return { type: "Intervals", detail: "12km: 6×1km @ 5:05/km (2min rest) + warm up/cooldown", icon: "⚡", macroDay: "hard", preferred: true, fueling: "intervals" };
-      case 4: return { type: "Strength", detail: "40min strength. Start reducing in final weeks.", icon: "💪", macroDay: "active", preferred: false };
-      case 5: return { type: "Tempo", detail: "16km: warm up + 10km @ 5:20/km + cooldown", icon: "🎯", macroDay: "preload", preferred: true, fueling: "tempo" };
-      case 6: return { type: "Peak Long Run", detail: `${longKm}km. Last ${mpKm}km @ 5:41/km marathon pace.`, icon: "🌅", macroDay: "longrun", preferred: true, fueling: "long_peak" };
-      case 0: return { type: "Reformer Pilates", detail: "Full class. Keeps you mobile through peak stress.", icon: "🧘", macroDay: "active", preferred: true };
+      case 1: return { type: "Easy Run", detail: "12km @ 6:20/km Zone 2", icon: "🏃", macroDay: "easy", preferred: true, km: 12 };
+      case 2: return { type: "Optional Easy", detail: "8km easy or rest. Check Body Battery first.", icon: "🚶", macroDay: "rest", preferred: false, km: 0 };
+      case 3: return { type: "Intervals", detail: "12km: 6×1km @ 5:05/km (2min rest) + warm up/cooldown", icon: "⚡", macroDay: "hard", preferred: true, fueling: "intervals", km: 12 };
+      case 4: return { type: "Strength", detail: "40min strength. Start reducing in final weeks.", icon: "💪", macroDay: "active", preferred: false, km: 0 };
+      case 5: return { type: "Tempo", detail: "16km: warm up + 10km @ 5:20/km + cooldown", icon: "🎯", macroDay: "preload", preferred: true, fueling: "tempo", km: 16 };
+      case 6: return { type: "Peak Long Run", detail: `${longKm}km. Last ${mpKm}km @ 5:41/km marathon pace.`, icon: "🌅", macroDay: "longrun", preferred: true, fueling: "long_peak", km: longKm };
+      case 0: return { type: "Reformer Pilates", detail: "Full class. Keeps you mobile through peak stress.", icon: "🧘", macroDay: "active", preferred: true, km: 0 };
     }
   }
   if (phase.name === "TAPER") {
@@ -320,15 +341,15 @@ function getDayActivity(date, phase, weekInPhase) {
     const nextDay = new Date(date); nextDay.setDate(nextDay.getDate()+1);
     const isRaceEve = nextDay.toDateString() === RACE_DATE.toDateString();
     switch(dow) {
-      case 1: return { type: "Easy Run", detail: daysToRace > 14 ? "10km easy @ 6:20/km" : "8km easy. Short and relaxed.", icon: "🏃", macroDay: "easy", preferred: true };
-      case 2: return { type: "Rest", detail: "Full rest. Trust your training.", icon: "😴", macroDay: "rest", preferred: false };
-      case 3: return { type: "Sharpener", detail: daysToRace > 14 ? "10km: warm up + 4×1km @ 5:41/km + cooldown" : "8km: warm up + 3×1km @ 5:41/km + cooldown", icon: "⚡", macroDay: "easy", preferred: true };
-      case 4: return { type: "Rest", detail: "Rest. Walk only.", icon: "😴", macroDay: "rest", preferred: false };
-      case 5: return { type: "Easy Strides", detail: "5km easy + 4×100m strides. Stay sharp.", icon: "🏃", macroDay: "easy", preferred: true };
+      case 1: return { type: "Easy Run", detail: daysToRace > 14 ? "10km easy @ 6:20/km" : "8km easy. Short and relaxed.", icon: "🏃", macroDay: "easy", preferred: true, km: daysToRace > 14 ? 10 : 8 };
+      case 2: return { type: "Rest", detail: "Full rest. Trust your training.", icon: "😴", macroDay: "rest", preferred: false, km: 0 };
+      case 3: return { type: "Sharpener", detail: daysToRace > 14 ? "10km: warm up + 4×1km @ 5:41/km + cooldown" : "8km: warm up + 3×1km @ 5:41/km + cooldown", icon: "⚡", macroDay: "easy", preferred: true, km: daysToRace > 14 ? 10 : 8 };
+      case 4: return { type: "Rest", detail: "Rest. Walk only.", icon: "😴", macroDay: "rest", preferred: false, km: 0 };
+      case 5: return { type: "Easy Strides", detail: "5km easy + 4×100m strides. Stay sharp.", icon: "🏃", macroDay: "easy", preferred: true, km: 5 };
       case 6:
-        if (isRaceEve) return { type: "Rest", detail: "Race eve 🍝 Pasta dinner, early sleep, bib pinned.", icon: "🍝", macroDay: "preload", preferred: true };
-        return { type: "Long Run", detail: daysToRace > 21 ? "22km easy — last big effort" : "14km easy", icon: "🌅", macroDay: "hard", preferred: true };
-      case 0: return { type: "Reformer Pilates", detail: "Full class. Keep the routine through taper.", icon: "🧘", macroDay: "active", preferred: true };
+        if (isRaceEve) return { type: "Rest", detail: "Race eve 🍝 Pasta dinner, early sleep, bib pinned.", icon: "🍝", macroDay: "preload", preferred: true, km: 0 };
+        return { type: "Long Run", detail: daysToRace > 21 ? "22km easy — last big effort" : "14km easy", icon: "🌅", macroDay: "longrun", preferred: true, km: daysToRace > 21 ? 22 : 14 };
+      case 0: return { type: "Reformer Pilates", detail: "Full class. Keep the routine through taper.", icon: "🧘", macroDay: "active", preferred: true, km: 0 };
     }
   }
   return { type: "Rest", detail: "Rest", icon: "😴", macroDay: "rest", preferred: false };
@@ -336,6 +357,51 @@ function getDayActivity(date, phase, weekInPhase) {
 
 const macroCals  = { hard: 2800, easy: 2400, active: 2200, rest: 2000, longrun: 3800, preload: 2900 };
 const macroColor = { hard: "#f97316", easy: "#60a5fa", active: "#4ade80", rest: "#818cf8", longrun: "#a78bfa", preload: "#c084fc" };
+// Dynamic calorie calculator based on actual planned km
+// At 90kg: ~90 kcal/km easy, ~100 kcal/km tempo/intervals (higher intensity)
+// Resting TDEE base: ~2200/day (excludes active calories)
+// Dog walks add ~300 kcal daily regardless
+function calcDayMacros(macroDay, km) {
+  const base = 2200; // resting metabolic
+  const walks = 300; // daily dog walks always
+  const kcalPerKm = (macroDay === "hard") ? 100 : 90; // intensity factor
+  const runBurn = Math.round((km || 0) * kcalPerKm);
+  const totalBurn = base + walks + runBurn;
+
+  // Deficit: 400-500 on easy/rest days, 0 deficit on long runs (fuel fully), small deficit otherwise
+  let deficit = 0;
+  if (macroDay === "longrun") deficit = 200; // barely deficit on long run, body needs fuel
+  else if (macroDay === "preload") deficit = 300;
+  else if (macroDay === "hard") deficit = 400;
+  else if (macroDay === "easy") deficit = 450;
+  else if (macroDay === "active") deficit = 400;
+  else deficit = 500; // rest day
+
+  const eatKcal = Math.max(1800, totalBurn - deficit);
+
+  // Macro split: carbs scale with km, protein always 155g, fat fills rest
+  const proteinG = 155;
+  const proteinKcal = proteinG * 4;
+
+  // Carbs: base 120g + 8g per km (more carbs for harder/longer sessions)
+  const carbsG = Math.round(Math.min(550, 120 + (km || 0) * 8));
+  const carbsKcal = carbsG * 4;
+
+  // Fat fills remaining
+  const fatKcal = Math.max(200, eatKcal - proteinKcal - carbsKcal);
+  const fatG = Math.round(fatKcal / 9);
+
+  return {
+    kcal: Math.round(eatKcal),
+    protein: proteinG,
+    carbs: carbsG,
+    fat: fatG,
+    burn: totalBurn,
+    runBurn,
+    deficit: Math.round(deficit),
+  };
+}
+
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const DAYS   = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
@@ -456,7 +522,7 @@ export default function DayByDayPlan() {
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
                               <div style={{ fontSize: "9px", color: mc, background: `${mc}18`, padding: "2px 6px", borderRadius: "4px" }}>
-                                {macroCals[day.macroDay]} kcal
+                                {calcDayMacros(day.macroDay, day.km).kcal.toLocaleString()} kcal
                               </div>
                               <div style={{ fontSize: "10px", color: "#334155" }}>{isOpen ? "▲" : "▼"}</div>
                             </div>
@@ -468,7 +534,7 @@ export default function DayByDayPlan() {
                       </div>
 
                       {/* Expanded nutrition panel */}
-                      {isOpen && <MacroPanel macroDay={day.macroDay} fueling={day.fueling} />}
+                      {isOpen && <MacroPanel macroDay={day.macroDay} fueling={day.fueling} km={day.km} />}
                     </div>
                   );
                 })}
