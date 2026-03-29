@@ -162,7 +162,7 @@ Write 2-3 sentences: did he execute the session correctly for its type? What doe
         analysis,
         felt: "good",
         extracted,
-        image: `data:image/jpeg;base64,${imageB64}`,
+        images: images.map(img => img.preview),
       });
 
     } catch (err) {
