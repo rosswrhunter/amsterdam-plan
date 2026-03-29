@@ -567,12 +567,8 @@ function MealLogPanel({ mealName, entry, onSave, onClose, color, plannedMeal }) 
               width: "100%", padding: "10px 12px", marginBottom: "8px",
               background: `${color}18`, border: `1px solid ${color}`,
               borderRadius: "7px", color, fontSize: "11px", cursor: "pointer",
-              fontFamily: "'Courier New', monospace", fontWeight: "bold", textAlign: "left",
-              display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px",
-            }}>
-              <span>✓ I had this</span>
-              <span style={{ fontSize: "9px", opacity: 0.7, fontWeight: "normal" }}>{plannedMeal.food || plannedMeal.name}</span>
-            </button>
+              fontFamily: "'Courier New', monospace", fontWeight: "bold", textAlign: "center",
+            }}>✓ I had this</button>
           )}
 
           {/* Mode toggle */}
