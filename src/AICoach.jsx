@@ -120,7 +120,7 @@ export default function AICoach({ memory, workoutLog }) {
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 116px)", fontFamily: "'Courier New', monospace" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100dvh - 116px)", fontFamily: "'Courier New', monospace" }}>
 
       {/* API Key setup */}
       {showKey && (
@@ -131,7 +131,7 @@ export default function AICoach({ memory, workoutLog }) {
               type="password" value={keyInput} onChange={e => setKeyInput(e.target.value)}
               onKeyDown={e => e.key === "Enter" && saveKey()}
               placeholder="sk-proj-..."
-              style={{ flex: 1, background: "#0f172a", border: "1px solid #1e293b", borderRadius: "6px", padding: "8px 10px", color: "#e2e8f0", fontSize: "11px", fontFamily: "'Courier New', monospace", outline: "none" }}
+              style={{ flex: 1, background: "#0f172a", border: "1px solid #1e293b", borderRadius: "6px", padding: "8px 10px", color: "#e2e8f0", fontSize: "16px", fontFamily: "'Courier New', monospace", outline: "none" }}
             />
             <button onClick={saveKey} style={{ padding: "8px 14px", background: "#facc15", border: "none", borderRadius: "6px", color: "#0a0a0f", fontSize: "10px", fontWeight: "bold", cursor: "pointer", fontFamily: "'Courier New', monospace", letterSpacing: "1px" }}>SAVE</button>
           </div>
@@ -211,7 +211,7 @@ export default function AICoach({ memory, workoutLog }) {
             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
             placeholder="Ask your coach... (Enter to send)"
             rows={1}
-            style={{ flex: 1, background: "#0f172a", border: "1px solid #1e293b", borderRadius: "7px", padding: "9px 11px", color: "#e2e8f0", fontSize: "11px", fontFamily: "'Courier New', monospace", outline: "none", resize: "none", lineHeight: 1.5 }}
+            style={{ flex: 1, background: "#0f172a", border: "1px solid #1e293b", borderRadius: "7px", padding: "9px 11px", color: "#e2e8f0", fontSize: "16px", fontFamily: "'Courier New', monospace", outline: "none", resize: "none", lineHeight: 1.5 }}
           />
           <button onClick={send} disabled={loading} style={{ padding: "9px 13px", background: loading ? "#1e293b" : "#4ade80", border: "none", borderRadius: "7px", color: loading ? "#475569" : "#0a0a0f", fontSize: "11px", fontWeight: "bold", cursor: loading ? "default" : "pointer", fontFamily: "'Courier New', monospace", flexShrink: 0, lineHeight: 1 }}>
             {loading ? "..." : "→"}

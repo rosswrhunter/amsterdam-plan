@@ -58,14 +58,14 @@ export default function WorkoutLog({ log, onAdd, onDelete }) {
             <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "1px", marginBottom: "5px" }}>WHAT WAS PLANNED</div>
             <input value={form.planned} onChange={e => setForm(f => ({ ...f, planned: e.target.value }))}
               placeholder="e.g. 10km tempo @ 5:30/km"
-              style={{ width: "100%", background: "#0f172a", border: "1px solid #1e293b", borderRadius: "6px", padding: "8px 10px", color: "#e2e8f0", fontSize: "11px", fontFamily: "'Courier New', monospace", outline: "none", boxSizing: "border-box" }} />
+              style={{ width: "100%", background: "#0f172a", border: "1px solid #1e293b", borderRadius: "6px", padding: "8px 10px", color: "#e2e8f0", fontSize: "16px", fontFamily: "'Courier New', monospace", outline: "none", boxSizing: "border-box" }} />
           </div>
 
           <div style={{ marginBottom: "10px" }}>
             <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "1px", marginBottom: "5px" }}>WHAT YOU ACTUALLY DID *</div>
             <input value={form.actual} onChange={e => setForm(f => ({ ...f, actual: e.target.value }))}
               placeholder="e.g. 10km @ 5:28/km avg, HR 178bpm"
-              style={{ width: "100%", background: "#0f172a", border: "1px solid #1e293b", borderRadius: "6px", padding: "8px 10px", color: "#e2e8f0", fontSize: "11px", fontFamily: "'Courier New', monospace", outline: "none", boxSizing: "border-box" }} />
+              style={{ width: "100%", background: "#0f172a", border: "1px solid #1e293b", borderRadius: "6px", padding: "8px 10px", color: "#e2e8f0", fontSize: "16px", fontFamily: "'Courier New', monospace", outline: "none", boxSizing: "border-box" }} />
           </div>
 
           <div style={{ marginBottom: "12px" }}>
@@ -73,7 +73,7 @@ export default function WorkoutLog({ log, onAdd, onDelete }) {
             <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
               placeholder="Felt strong first 6km, legs tightened late. Took PH 1500 pre, one Carb 30 at 6km..."
               rows={2}
-              style={{ width: "100%", background: "#0f172a", border: "1px solid #1e293b", borderRadius: "6px", padding: "8px 10px", color: "#e2e8f0", fontSize: "11px", fontFamily: "'Courier New', monospace", outline: "none", resize: "none", boxSizing: "border-box" }} />
+              style={{ width: "100%", background: "#0f172a", border: "1px solid #1e293b", borderRadius: "6px", padding: "8px 10px", color: "#e2e8f0", fontSize: "16px", fontFamily: "'Courier New', monospace", outline: "none", resize: "none", boxSizing: "border-box" }} />
           </div>
 
           <div style={{ marginBottom: "14px" }}>
