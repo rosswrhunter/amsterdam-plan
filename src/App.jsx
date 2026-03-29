@@ -280,19 +280,26 @@ Respond ONLY with valid JSON, no markdown:
   return JSON.parse(text.replace(/```json|```/g, "").trim());
 }
 
-function StaticMealCard({ meal, color, onSwap, swapping }) {
+function StaticMealCard({ meal, color, onSwap, swapping, kept, onToggleKeep }) {
   const [open, setOpen] = useState(false);
   return (
-    <div style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${open ? color : "#1e293b"}`, borderRadius: "6px", marginBottom: "4px", overflow: "hidden" }}>
+    <div style={{ background: kept ? `${color}08` : "rgba(255,255,255,0.02)", border: `1px solid ${kept ? color + "60" : open ? color : "#1e293b"}`, borderRadius: "6px", marginBottom: "4px", overflow: "hidden" }}>
       <div onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }} style={{ padding: "8px 10px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
-        <span style={{ fontSize: "9px", color, letterSpacing: "1px" }}>{meal.meal.toUpperCase()}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <button onClick={(e) => { e.stopPropagation(); onToggleKeep && onToggleKeep(); }} style={{
+            background: kept ? color : "transparent", border: `1px solid ${kept ? color : "#334155"}`,
+            borderRadius: "3px", color: kept ? "#000" : "#334155", fontSize: "9px",
+            cursor: "pointer", padding: "1px 5px", fontFamily: "'Courier New', monospace", lineHeight: 1.4, flexShrink: 0,
+          }} title={kept ? "Unlock meal" : "Lock meal"}>{kept ? "🔒" : "🔓"}</button>
+          <span style={{ fontSize: "9px", color: kept ? color : "#94a3b8", letterSpacing: "1px" }}>{meal.meal.toUpperCase()}</span>
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span style={{ fontSize: "9px", color: "#475569" }}>P:{meal.p} C:{meal.c} F:{meal.f}</span>
-          <button onClick={(e) => { e.stopPropagation(); onSwap && onSwap(); }} disabled={swapping} style={{
+          {!kept && <button onClick={(e) => { e.stopPropagation(); onSwap && onSwap(); }} disabled={swapping} style={{
             background: "transparent", border: `1px solid ${color}40`, borderRadius: "4px",
             color: swapping ? "#334155" : color, fontSize: "10px", cursor: swapping ? "default" : "pointer",
             padding: "1px 6px", fontFamily: "'Courier New', monospace", lineHeight: 1.4,
-          }}>{swapping ? "…" : "↻"}</button>
+          }}>{swapping ? "…" : "↻"}</button>}
           <span style={{ fontSize: "10px", color: "#334155" }}>{open ? "▲" : "▼"}</span>
         </div>
       </div>
@@ -313,10 +320,10 @@ function StaticMealCard({ meal, color, onSwap, swapping }) {
   );
 }
 
-function RecipeCard({ recipe, color, mealLabel, onSwap, swapping }) {
+function RecipeCard({ recipe, color, mealLabel, onSwap, swapping, kept, onToggleKeep }) {
   const [open, setOpen] = useState(false);
   return (
-    <div style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${open ? color : "#1e293b"}`, borderRadius: "6px", marginBottom: "4px", overflow: "hidden" }}>
+    <div style={{ background: kept ? `${color}08` : "rgba(255,255,255,0.02)", border: `1px solid ${kept ? color + "60" : open ? color : "#1e293b"}`, borderRadius: "6px", marginBottom: "4px", overflow: "hidden" }}>
       <div onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }} style={{ padding: "8px 10px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "6px" }}>
         <div style={{ flex: 1 }}>
           {mealLabel && <div style={{ fontSize: "9px", color, letterSpacing: "1px", marginBottom: "2px" }}>{mealLabel.toUpperCase()}</div>}
@@ -329,7 +336,12 @@ function RecipeCard({ recipe, color, mealLabel, onSwap, swapping }) {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
-          {onSwap && <button onClick={(e) => { e.stopPropagation(); onSwap(); }} disabled={swapping} style={{
+          <button onClick={(e) => { e.stopPropagation(); onToggleKeep && onToggleKeep(); }} style={{
+            background: kept ? color : "transparent", border: `1px solid ${kept ? color : "#334155"}`,
+            borderRadius: "3px", color: kept ? "#000" : "#334155", fontSize: "9px",
+            cursor: "pointer", padding: "1px 5px", fontFamily: "'Courier New', monospace", lineHeight: 1.4,
+          }}>{kept ? "🔒" : "🔓"}</button>
+          {onSwap && !kept && <button onClick={(e) => { e.stopPropagation(); onSwap(); }} disabled={swapping} style={{
             background: "transparent", border: `1px solid ${color}40`, borderRadius: "4px",
             color: swapping ? "#334155" : color, fontSize: "10px", cursor: swapping ? "default" : "pointer",
             padding: "1px 6px", fontFamily: "'Courier New', monospace", lineHeight: 1.4,
@@ -358,6 +370,53 @@ function MacroPanel({ macroDay, fueling, km, phase, recipes, loadingRecipes, rec
   const m = macroData[macroDay] || macroData["hard"];
   const dyn = calcDayMacros(macroDay, km, phase);
   const color = m.color;
+  const [kept, setKept] = useState(new Set()); // set of kept meal names
+
+  // Get current meal list (recipes or scaled static)
+  const baseMeals = recipes ? recipes.meals : scaleMeals(m.meals, dyn.protein, dyn.carbs, dyn.fat);
+
+  // Subtract kept meal macros from day targets to get remaining budget for unlocked meals
+  const keptMeals = baseMeals.filter(meal => kept.has(meal.meal || meal.name));
+  const freeMeals  = baseMeals.filter(meal => !kept.has(meal.meal || meal.name));
+
+  const usedP = keptMeals.reduce((s, meal) => s + (meal.p ?? meal.macros?.protein ?? 0), 0);
+  const usedC = keptMeals.reduce((s, meal) => s + (meal.c ?? meal.macros?.carbs  ?? 0), 0);
+  const usedF = keptMeals.reduce((s, meal) => s + (meal.f ?? meal.macros?.fat    ?? 0), 0);
+
+  const remP = Math.max(0, dyn.protein - usedP);
+  const remC = Math.max(0, dyn.carbs   - usedC);
+  const remF = Math.max(0, dyn.fat     - usedF);
+
+  // Rescale free static meals to remaining budget; recipe macros get a note showing adjustment
+  const rebalancedFree = recipes
+    ? freeMeals.map(meal => {
+        const mealKeys = freeMeals.length;
+        return {
+          ...meal,
+          macros: {
+            kcal:    meal.macros?.kcal    ?? 0,
+            protein: mealKeys > 0 ? Math.round(meal.macros?.protein / Math.max(1, freeMeals.reduce((s,x)=>s+(x.macros?.protein??0),0)) * remP) : meal.macros?.protein ?? 0,
+            carbs:   mealKeys > 0 ? Math.round(meal.macros?.carbs   / Math.max(1, freeMeals.reduce((s,x)=>s+(x.macros?.carbs  ??0),0)) * remC) : meal.macros?.carbs   ?? 0,
+            fat:     mealKeys > 0 ? Math.round(meal.macros?.fat     / Math.max(1, freeMeals.reduce((s,x)=>s+(x.macros?.fat    ??0),0)) * remF) : meal.macros?.fat     ?? 0,
+          }
+        };
+      })
+    : scaleMeals(freeMeals, remP, remC, remF);
+
+  // Merge kept (unchanged) + rebalanced free, preserving order
+  const displayMeals = baseMeals.map(meal => {
+    const mealId = meal.meal || meal.name;
+    if (kept.has(mealId)) return meal;
+    return rebalancedFree.find(f => (f.meal || f.name) === mealId) || meal;
+  });
+
+  function toggleKeep(mealId) {
+    setKept(prev => {
+      const next = new Set(prev);
+      if (next.has(mealId)) next.delete(mealId); else next.add(mealId);
+      return next;
+    });
+  }
 
   return (
     <div onClick={e => e.stopPropagation()} style={{ marginTop: "10px", borderTop: `1px solid ${color}30`, paddingTop: "10px" }}>
@@ -400,18 +459,24 @@ function MacroPanel({ macroDay, fueling, km, phase, recipes, loadingRecipes, rec
       {/* Meals */}
       <div style={{ fontSize: "9px", color: "#475569", letterSpacing: "2px", marginBottom: "6px" }}>MEALS</div>
       {/* Meals — static until recipes generated, then replaced inline */}
+      {kept.size > 0 && (
+        <div style={{ fontSize: "9px", color: "#475569", marginBottom: "6px", letterSpacing: "1px" }}>
+          🔒 {kept.size} meal{kept.size > 1 ? "s" : ""} locked · unlocked meals rebalanced to remaining budget
+        </div>
+      )}
       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-        {(recipes ? recipes.meals : scaleMeals(m.meals, dyn.protein, dyn.carbs, dyn.fat)).map((meal, i) => {
-          const mealName = meal.meal;
-          const isSwapping = swappingMeal === mealName;
+        {displayMeals.map((meal, i) => {
+          const mealId = meal.meal || meal.name;
+          const isKept = kept.has(mealId);
+          const isSwapping = swappingMeal === mealId;
           return recipes ? (
-            <RecipeCard key={i} recipe={meal} color={color} mealLabel={mealName}
-              onSwap={() => onSwapMeal && onSwapMeal(mealName)}
-              swapping={isSwapping} />
+            <RecipeCard key={i} recipe={meal} color={color} mealLabel={meal.meal}
+              onSwap={() => onSwapMeal && onSwapMeal(mealId, { remP, remC, remF, count: freeMeals.length })}
+              swapping={isSwapping} kept={isKept} onToggleKeep={() => toggleKeep(mealId)} />
           ) : (
             <StaticMealCard key={i} meal={meal} color={color}
-              onSwap={() => onSwapMeal && onSwapMeal(mealName)}
-              swapping={isSwapping} />
+              onSwap={() => onSwapMeal && onSwapMeal(mealId, { remP, remC, remF, count: freeMeals.length })}
+              swapping={isSwapping} kept={isKept} onToggleKeep={() => toggleKeep(mealId)} />
           );
         })}
       </div>
@@ -738,13 +803,16 @@ export default function DayByDayPlan() {
                           setDayRecipeLoading(p => ({ ...p, [dayKey]: false }));
                         }}
                         swappingMeal={daySwappingMeal[dayKey] || null}
-                        onSwapMeal={async (mealName) => {
+                        onSwapMeal={async (mealName, budget) => {
                           setDaySwappingMeal(p => ({ ...p, [dayKey]: mealName }));
                           try {
                             const apiKey = localStorage.getItem("oai_key");
                             if (!apiKey) throw new Error("No OpenAI key");
                             const macroInfo = macroData[day.macroDay] || macroData["hard"];
-                            const prompt = `You are a sports nutritionist. Generate 1 recipe for "${mealName}" for Ross Hunter (marathon runner, 90kg). Day type: ${macroInfo.label}. Daily targets: ${macroInfo.kcal} kcal, P:${macroInfo.protein}g C:${macroInfo.carbs}g F:${macroInfo.fat}g. No cottage cheese, no feta. Quick, practical, tasty. Exact quantities. Respond ONLY as valid JSON: {"meal":"${mealName}","name":"...","time":"...","macros":{"kcal":0,"protein":0,"carbs":0,"fat":0},"ingredients":["..."],"method":["..."]}`;
+                            const mealP = budget ? Math.round(budget.remP / Math.max(1, budget.count)) : Math.round(macroInfo.protein / 5);
+                            const mealC = budget ? Math.round(budget.remC / Math.max(1, budget.count)) : Math.round(macroInfo.carbs   / 5);
+                            const mealF = budget ? Math.round(budget.remF / Math.max(1, budget.count)) : Math.round(macroInfo.fat     / 5);
+                            const prompt = `You are a sports nutritionist. Generate 1 recipe for "${mealName}" for Ross Hunter (marathon runner, 90kg). Day type: ${macroInfo.label}. This meal's macro target: P:${mealP}g C:${mealC}g F:${mealF}g. No cottage cheese, no feta. Quick, practical, tasty. Exact quantities. Hit the macro targets as closely as possible. Respond ONLY as valid JSON: {"meal":"${mealName}","name":"...","time":"...","macros":{"kcal":0,"protein":0,"carbs":0,"fat":0},"ingredients":["..."],"method":["..."]}`;
                             const res = await fetch("https://api.openai.com/v1/chat/completions", {
                               method: "POST",
                               headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
