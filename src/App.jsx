@@ -331,7 +331,7 @@ function MacroPanel({ macroDay, fueling, km, recipes, loadingRecipes, recipeErro
   const color = m.color;
 
   return (
-    <div style={{ marginTop: "10px", borderTop: `1px solid ${color}30`, paddingTop: "10px" }}>
+    <div onClick={e => e.stopPropagation()} style={{ marginTop: "10px", borderTop: `1px solid ${color}30`, paddingTop: "10px" }}>
       {/* Burn vs Eat summary */}
       <div style={{ background: `${color}10`, border: `1px solid ${color}25`, borderRadius: "8px", padding: "10px 12px", marginBottom: "8px" }}>
         <div style={{ fontSize: "9px", color: color, letterSpacing: "2px", marginBottom: "10px" }}>{m.label.toUpperCase()}{km ? ` · ${km}km` : ""}</div>
