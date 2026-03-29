@@ -5,11 +5,15 @@ import AICoach from './AICoach.jsx'
 import WorkoutLog from './WorkoutLog.jsx'
 import Memory from './Memory.jsx'
 import Recipes from './Recipes.jsx'
+import Readiness from './Readiness.jsx'
+import RaceSimulator from './RaceSimulator.jsx'
 
 const TABS = [
   { id: "plan",    label: "PLAN",    icon: "📅" },
-  { id: "log",     label: "LOG",     icon: "✍️" },
+  { id: "ready",   label: "READY",   icon: "🌅" },
+  { id: "race",    label: "RACE",    icon: "🏅" },
   { id: "recipes", label: "RECIPES", icon: "🍳" },
+  { id: "log",     label: "LOG",     icon: "✍️" },
   { id: "coach",   label: "COACH",   icon: "🤖" },
   { id: "memory",  label: "NOTES",   icon: "🧠" },
 ];
@@ -62,10 +66,10 @@ export default function Root() {
             background: "transparent",
             color: tab === t.id ? "#4ade80" : "#334155",
             cursor: "pointer", fontFamily: "'Courier New', monospace",
-            fontSize: "9px", letterSpacing: "1.5px",
+            fontSize: "8px", letterSpacing: "0.5px",
             display: "flex", flexDirection: "column", alignItems: "center", gap: "2px",
             transition: "color 0.15s",
-            height: "52px", boxSizing: "border-box",
+            height: "52px", boxSizing: "border-box", padding: "6px 2px 4px",
           }}>
             <span style={{ fontSize: "16px" }}>{t.icon}</span>
             {t.label}
@@ -75,6 +79,8 @@ export default function Root() {
 
       {/* Tab content */}
       {tab === "plan"    && <App />}
+      {tab === "ready"   && <Readiness allDays={generateAllDays()} />}
+      {tab === "race"    && <RaceSimulator />}
       {tab === "log"     && <WorkoutLog log={workoutLog} onAdd={addWorkout} onDelete={deleteWorkout} allDays={generateAllDays()} />}
       {tab === "recipes" && <Recipes allDays={generateAllDays()} />}
       {tab === "coach"   && <AICoach memory={memory} workoutLog={workoutLog} allDays={generateAllDays()} calcDayMacros={calcDayMacros} />}
